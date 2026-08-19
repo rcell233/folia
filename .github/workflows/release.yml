@@ -1,0 +1,208 @@
+name: Publish release images
+
+on:
+  push:
+    tags:
+      - v*.*.*
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Validate release version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${GITHUB_REF_NAME}"
+          if [[ ! "${tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag must use vMAJOR.MINOR.PATCH: ${tag}" >&2
+            exit 1
+          fi
+
+          version="${tag#v}"
+          manifest_version="$(awk '$1 == "version:" { print $2 }' release/manifest.yaml)"
+          file_version="$(tr -d '\n' < VERSION)"
+          platforms="$(awk '/^platforms:/ { in_platforms=1; next } in_platforms && /^  - / { print $2; next } in_platforms { exit }' release/manifest.yaml)"
+
+          if [[ "${version}" != "${manifest_version}" || "${version}" != "${file_version}" ]]; then
+            echo "Tag ${tag}, release manifest ${manifest_version}, and VERSION ${file_version} must match." >&2
+            exit 1
+          fi
+
+          if [[ "${platforms}" != "linux/amd64" ]]; then
+            echo "Release manifest must declare only linux/amd64, found: ${platforms}" >&2
+            exit 1
+          fi
+
+          for package in \
+            folia-cloud \
+            folia-web \
+            folia-worker \
+            folia-auth \
+            folia-url-migrator
+          do
+            image="ghcr.io/rcell233/${package}:${version}"
+            grep -Fq "${image}" release/manifest.yaml
+            grep -Fq "${image}" deploy/compose/.env.example
+          done
+
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+  build-candidates:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        component:
+          - web
+          - cloud
+          - worker
+          - auth
+          - url-migrator
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Build candidate ${{ matrix.component }}
+        uses: ./.github/actions/build-image
+        with:
+          component: ${{ matrix.component }}
+          push: "true"
+          tags: ghcr.io/${{ github.repository_owner }}/folia-${{ matrix.component }}:candidate-${{ github.run_id }}-${{ github.run_attempt }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
+          cache_scope: folia-${{ matrix.component }}
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ github.token }}
+
+  promote:
+    needs:
+      - prepare
+      - build-candidates
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Promote complete image set
+        shell: bash
+        env:
+          OWNER: ${{ github.repository_owner }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          REVISION: ${{ github.sha }}
+          CANDIDATE: candidate-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+
+          packages=(
+            folia-web
+            folia-cloud
+            folia-worker
+            folia-auth
+            folia-url-migrator
+          )
+
+          inspect_digest() {
+            local output ref
+            ref="$1"
+
+            if output="$(docker buildx imagetools inspect "${ref}" 2>&1)"; then
+              awk '$1 == "Digest:" { print $2; found=1; exit } END { if (!found) exit 2 }' <<< "${output}"
+              return
+            fi
+
+            if grep -Eqi 'manifest unknown|not found' <<< "${output}"; then
+              return 1
+            fi
+
+            printf '%s\n' "${output}" >&2
+            return 2
+          }
+
+          for package in "${packages[@]}"; do
+            image="ghcr.io/${OWNER}/${package}"
+            candidate_ref="${image}:${CANDIDATE}"
+            version_ref="${image}:${VERSION}"
+            revision_ref="${image}:sha-${REVISION}"
+
+            if ! candidate_digest="$(inspect_digest "${candidate_ref}")"; then
+              echo "Candidate image is missing or unreadable: ${candidate_ref}" >&2
+              exit 1
+            fi
+
+            if existing_digest="$(inspect_digest "${version_ref}")"; then
+              echo "Refusing to overwrite existing release tag ${version_ref} (${existing_digest})." >&2
+              exit 1
+            else
+              status=$?
+              if [[ ${status} -ne 1 ]]; then
+                exit "${status}"
+              fi
+            fi
+
+            if revision_digest="$(inspect_digest "${revision_ref}")"; then
+              if [[ "${revision_digest}" != "${candidate_digest}" ]]; then
+                echo "Existing ${revision_ref} points to ${revision_digest}, not ${candidate_digest}." >&2
+                exit 1
+              fi
+            else
+              status=$?
+              if [[ ${status} -ne 1 ]]; then
+                exit "${status}"
+              fi
+            fi
+          done
+
+          for package in "${packages[@]}"; do
+            image="ghcr.io/${OWNER}/${package}"
+            candidate_ref="${image}:${CANDIDATE}"
+            version_ref="${image}:${VERSION}"
+            revision_ref="${image}:sha-${REVISION}"
+
+            docker buildx imagetools create \
+              --tag "${version_ref}" \
+              --tag "${revision_ref}" \
+              "${candidate_ref}"
+
+            candidate_digest="$(inspect_digest "${candidate_ref}")"
+            test "$(inspect_digest "${version_ref}")" = "${candidate_digest}"
+            test "$(inspect_digest "${revision_ref}")" = "${candidate_digest}"
+          done
+
+          {
+            echo "## Folia ${{ needs.prepare.outputs.version }}"
+            echo
+            echo "All five linux/amd64 images were published to GHCR."
+            echo "Deploy only this complete version set on the NAS."
+          } >> "${GITHUB_STEP_SUMMARY}"

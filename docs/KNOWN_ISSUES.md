@@ -38,13 +38,16 @@ to be updated before those suites become authoritative.
 
 ## Test evidence is incomplete
 
-The deployed Cloud and Web images built successfully and are healthy, but the
-new Board unit cases were not proven to have run on the NAS. The development
-machine should establish focused Web tests, Cloud unit tests, and an authenticated
-Cloud/Web Board-view contract test before the first general release.
+GitHub Actions now provides repeatable image builds, but successful container
+builds do not prove the focused Web tests, Cloud unit tests, or an authenticated
+Cloud/Web Board-view contract. The deployed baseline is healthy, but those
+behavioral checks are not yet complete and should not be inferred from a green
+CI or release workflow.
 
 ## Image reproducibility
 
-The initial Dockerfiles pin major toolchain/image tags but not every base-image
-digest or operating-system package. The first formal release should record image
-digests, add OCI source/revision labels, and generate an SBOM.
+The Dockerfiles pin major toolchain/image tags but not every base-image digest
+or operating-system package. Release promotion protects an existing commit tag
+from being redirected to a different digest, but rebuilding the source later is
+not guaranteed to produce that digest. Releases should record GHCR digests; OCI
+provenance, image signing, and SBOM generation are still missing.

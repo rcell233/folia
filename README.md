@@ -20,7 +20,7 @@ newer public Web API is not compatible with the selected public Cloud revision.
 | `services/auth` | Pinned AppFlowy Auth source |
 | `deploy/compose` | Pull-only production Compose and an opt-in build override |
 | `tools/url-migrator` | Semantic migration tool for stored deployment URLs |
-| `docs` | Architecture, provenance, deployment, and known issues |
+| `docs` | Architecture, provenance, development, deployment, and releasing |
 
 ## Baseline
 
@@ -34,19 +34,24 @@ The upstream histories are retained as Git subtrees. See
 [`docs/BASELINE.md`](docs/BASELINE.md) for the deployed image evidence and the
 exact local modifications.
 
-## Build on a development machine
+## Build and release
 
-```bash
-cp deploy/compose/.env.example deploy/compose/.env
-# Edit image tags and public URLs in deploy/compose/.env.
-cd deploy/compose
-bash scripts/build.sh appflowy-web
-bash scripts/build.sh appflowy-cloud
-```
+GitHub Actions is the official image build and publication path. The root CI
+workflow runs for pull requests and `main`, detects which image inputs changed,
+and builds only those images. These routine builds never push images. A manual
+workflow run can also build one selected component without using the NAS.
 
-Builds are selected by service. A Web-only change does not require rebuilding
-Cloud, Auth, or Worker. After authenticating to GHCR, publish selected images
-with `bash scripts/publish.sh appflowy-web`.
+A `vX.Y.Z` tag starts the release workflow. It verifies that
+the release metadata declares `X.Y.Z`, then builds all five images in parallel
+for `linux/amd64` on `ubuntu-24.04`. Only after every candidate succeeds does a
+promotion job create the `X.Y.Z` and commit SHA tags in GHCR. GHCR is the only
+supported registry for Folia-built images, and Folia does not publish `latest`
+tags. See [`docs/RELEASING.md`](docs/RELEASING.md) for the complete release
+procedure.
+
+The local build and publish scripts remain available for focused troubleshooting
+and emergencies; they are not the normal release path. See
+[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
 
 ## Deploy on a NAS
 
@@ -56,9 +61,14 @@ and runs containers:
 ```bash
 cd deploy/compose
 bash scripts/init-env.sh
-# Edit .env and use image tags already published by the build machine.
+# Edit .env and use one complete version published by the release workflow.
 bash scripts/deploy.sh
 ```
+
+Configure all five `FOLIA_*_IMAGE` values from one successfully completed
+version release. Public GHCR packages can be pulled anonymously; private
+packages require `docker login ghcr.io` on the NAS. Never deploy a partial
+release or mix versions from different releases.
 
 Persistent state is stored under the repository-level `data/` directory and is
 excluded from Git. Backups are written to `backups/` and are also excluded.

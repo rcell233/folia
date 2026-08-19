@@ -1,0 +1,65 @@
+name: Validate repository
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Check patches and shell syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          bash -n deploy/compose/scripts/*.sh
+
+      - name: Validate release metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="$(awk '$1 == "version:" { print $2 }' release/manifest.yaml)"
+          platforms="$(awk '/^platforms:/ { in_platforms=1; next } in_platforms && /^  - / { print $2; next } in_platforms { exit }' release/manifest.yaml)"
+          test -n "${version}"
+          test "$(tr -d '\n' < VERSION)" = "${version}"
+          test "${platforms}" = "linux/amd64"
+
+          for package in \
+            folia-cloud \
+            folia-web \
+            folia-worker \
+            folia-auth \
+            folia-url-migrator
+          do
+            image="ghcr.io/rcell233/${package}:${version}"
+            grep -Fq "${image}" release/manifest.yaml
+            grep -Fq "${image}" deploy/compose/.env.example
+          done
+
+      - name: Validate production Compose
+        working-directory: deploy/compose
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose \
+            --env-file .env.example \
+            --profile tools \
+            -f compose.yaml \
+            -f compose.build.yaml \
+            config --quiet

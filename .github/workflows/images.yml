@@ -1,0 +1,159 @@
+name: Build changed images
+
+on:
+  pull_request:
+    paths:
+      - .dockerignore
+      - .github/actions/build-image/**
+      - .github/workflows/images.yml
+      - apps/web/**
+      - deploy/compose/compose.build.yaml
+      - deploy/compose/docker/**
+      - services/auth/**
+      - services/cloud/**
+      - tools/url-migrator/**
+  push:
+    branches:
+      - main
+    paths:
+      - .dockerignore
+      - .github/actions/build-image/**
+      - .github/workflows/images.yml
+      - apps/web/**
+      - deploy/compose/compose.build.yaml
+      - deploy/compose/docker/**
+      - services/auth/**
+      - services/cloud/**
+      - tools/url-migrator/**
+  workflow_dispatch:
+    inputs:
+      component:
+        description: Component to build in the GitHub-hosted environment
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - web
+          - cloud
+          - worker
+          - auth
+          - url-migrator
+
+permissions:
+  contents: read
+
+concurrency:
+  group: images-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      components: ${{ steps.components.outputs.components }}
+      has_images: ${{ steps.components.outputs.has_images }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          fetch-depth: 0
+
+      - name: Select image components
+        id: components
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          REQUESTED_COMPONENT: ${{ inputs.component }}
+        run: |
+          set -euo pipefail
+
+          declare -A selected=()
+          components=(web cloud worker auth url-migrator)
+
+          select_all() {
+            local component
+            for component in "${components[@]}"; do
+              selected["${component}"]=1
+            done
+          }
+
+          if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+            if [[ "${REQUESTED_COMPONENT}" == "all" ]]; then
+              select_all
+            else
+              selected["${REQUESTED_COMPONENT}"]=1
+            fi
+          else
+            if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+              base_sha="${PR_BASE_SHA}"
+            elif git rev-parse --verify "${BEFORE_SHA}^{commit}" >/dev/null 2>&1; then
+              base_sha="${BEFORE_SHA}"
+            else
+              base_sha="$(git rev-list --max-parents=0 HEAD)"
+            fi
+
+            while IFS= read -r -d '' path; do
+              case "${path}" in
+                .dockerignore|.github/actions/build-image/*|.github/workflows/images.yml|deploy/compose/compose.build.yaml)
+                  select_all
+                  ;;
+                apps/web/*|deploy/compose/docker/web.Dockerfile)
+                  selected[web]=1
+                  ;;
+                services/auth/*|deploy/compose/docker/auth.Dockerfile)
+                  selected[auth]=1
+                  ;;
+                services/cloud/*)
+                  selected[cloud]=1
+                  selected[worker]=1
+                  if [[ "${path}" == "services/cloud/docker/gotrue/start.sh" ]]; then
+                    selected[auth]=1
+                  fi
+                  ;;
+                tools/url-migrator/*)
+                  selected[url-migrator]=1
+                  ;;
+              esac
+            done < <(git diff --name-only -z "${base_sha}" "${GITHUB_SHA}")
+          fi
+
+          json='[]'
+          for component in "${components[@]}"; do
+            if [[ -n "${selected[${component}]:-}" ]]; then
+              json="$(jq -c --arg component "${component}" '. + [$component]' <<< "${json}")"
+            fi
+          done
+
+          echo "components=${json}" >> "${GITHUB_OUTPUT}"
+          if [[ "${json}" == "[]" ]]; then
+            echo "has_images=false" >> "${GITHUB_OUTPUT}"
+          else
+            echo "has_images=true" >> "${GITHUB_OUTPUT}"
+          fi
+
+  build:
+    if: needs.changes.outputs.has_images == 'true'
+    needs: changes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        component: ${{ fromJSON(needs.changes.outputs.components) }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Build ${{ matrix.component }}
+        uses: ./.github/actions/build-image
+        with:
+          component: ${{ matrix.component }}
+          push: "false"
+          tags: ghcr.io/${{ github.repository_owner }}/folia-${{ matrix.component }}:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache_scope: folia-${{ matrix.component }}
