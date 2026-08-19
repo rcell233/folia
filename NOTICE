@@ -1,0 +1,21 @@
+Folia
+Copyright (C) 2026 rcell233
+
+Folia is a derivative distribution built from public upstream projects. It is
+not an official AppFlowy distribution.
+
+Included components:
+
+* AppFlowy Cloud, copyright AppFlowy contributors, AGPL-3.0.
+  Upstream: https://github.com/AppFlowy-IO/AppFlowy-Cloud
+* AppFlowy Web, copyright AppFlowy contributors, AGPL-3.0.
+  Upstream: https://github.com/AppFlowy-IO/AppFlowy-Web
+* AppFlowy Auth, derived from Supabase Auth, MIT.
+  Upstream: https://github.com/AppFlowy-IO/auth
+
+The complete upstream license texts and component-specific notices remain in
+their respective source directories. Infrastructure images referenced by the
+Compose file are independent programs distributed under their own licenses.
+
+AppFlowy and Notion are names of their respective owners. This project is also
+unrelated to PaperMC's Minecraft server project named Folia.

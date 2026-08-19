@@ -1,0 +1,32 @@
+services:
+  appflowy-web:
+    build:
+      context: ../..
+      dockerfile: deploy/compose/docker/web.Dockerfile
+
+  appflowy-cloud:
+    build:
+      context: ../../services/cloud
+      dockerfile: Dockerfile
+      args:
+        PROFILE: release
+        FEATURES: ""
+
+  appflowy-worker:
+    build:
+      context: ../../services/cloud
+      dockerfile: services/appflowy-worker/Dockerfile
+      args:
+        PROFILE: release
+
+  gotrue:
+    build:
+      context: ../..
+      dockerfile: deploy/compose/docker/auth.Dockerfile
+
+  url-migrator:
+    image: ${FOLIA_URL_MIGRATOR_IMAGE}
+    profiles: ["tools"]
+    build:
+      context: ../../tools/url-migrator
+      dockerfile: Dockerfile

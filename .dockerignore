@@ -1,0 +1,15 @@
+**
+!apps/
+!apps/web/
+!apps/web/**
+!services/
+!services/auth/
+!services/auth/**
+!services/cloud/
+!services/cloud/docker/
+!services/cloud/docker/gotrue/
+!services/cloud/docker/gotrue/start.sh
+!deploy/
+!deploy/compose/
+!deploy/compose/docker/
+!deploy/compose/docker/**

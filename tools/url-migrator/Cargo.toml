@@ -1,0 +1,10 @@
+[package]
+name = "appflowy-url-migrator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+collab = { git = "https://github.com/AppFlowy-IO/AppFlowy-Collab", rev = "e59260e524f33104b0ddcd6bb8f6218cad0f7e18" }
+postgres = "0.19"
+yrs = "0.23.5"

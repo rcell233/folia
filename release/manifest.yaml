@@ -1,0 +1,30 @@
+version: 0.1.0
+status: deployed-baseline
+platforms:
+  - linux/amd64
+
+sources:
+  cloud:
+    repository: https://github.com/AppFlowy-IO/AppFlowy-Cloud.git
+    revision: 581f123d48008dd4453be85a5133c554e34a51cb
+  web:
+    repository: https://github.com/AppFlowy-IO/AppFlowy-Web.git
+    revision: d0704de22c6521a17d04db76888c869b7b218026
+    upstream_version: 0.10.7
+  auth:
+    repository: https://github.com/AppFlowy-IO/auth.git
+    revision: 43770901225d5fb6d2a262e62412e1c223ffd85c
+    upstream_version: 0.8.0
+
+images:
+  cloud: ghcr.io/rcell233/folia-cloud:0.1.0
+  web: ghcr.io/rcell233/folia-web:0.1.0
+  worker: ghcr.io/rcell233/folia-worker:0.1.0
+  auth: ghcr.io/rcell233/folia-auth:0.1.0
+  url_migrator: ghcr.io/rcell233/folia-url-migrator:0.1.0
+
+infrastructure:
+  gateway: nginx:1.29-alpine
+  postgres: pgvector/pgvector:pg16
+  redis: redis:7.4-alpine
+  object_storage: minio/minio:RELEASE.2025-09-07T16-13-09Z
