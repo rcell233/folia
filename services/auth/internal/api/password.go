@@ -1,0 +1,83 @@
+package api
+
+import (
+	"context"
+	"fmt"
+	"regexp"
+	"strings"
+
+	"github.com/sirupsen/logrus"
+)
+
+// BCrypt hashed passwords have a 72 character limit
+const MaxPasswordLength = 72
+
+// WeakPasswordError encodes an error that a password does not meet strength
+// requirements. It is handled specially in errors.go as it gets transformed to
+// a HTTPError with a special weak_password field that encodes the Reasons
+// slice.
+type WeakPasswordError struct {
+	Message            string   `json:"message,omitempty"`
+	Reasons            []string `json:"reasons,omitempty"`
+	MinLength          int      `json:"min_length,omitempty"`
+	RequiredCharacters []string `json:"required_characters,omitempty"`
+}
+
+func (e *WeakPasswordError) Error() string {
+	return e.Message
+}
+
+func (a *API) checkPasswordStrength(ctx context.Context, password string) error {
+	config := a.config
+
+	if len(password) > MaxPasswordLength {
+		return badRequestError(ErrorCodeValidationFailed, fmt.Sprintf("Password cannot be longer than %v characters", MaxPasswordLength))
+	}
+
+	var messages, reasons []string
+
+	if len(password) < config.Password.MinLength {
+		reasons = append(reasons, "length")
+		messages = append(messages, fmt.Sprintf("Password should be at least %d characters.", config.Password.MinLength))
+	}
+
+	for _, characterSet := range config.Password.RequiredCharacters {
+		if characterSet != "" {
+			re, err := regexp.Compile(characterSet)
+			if err != nil {
+				logrus.Warn(fmt.Sprintf("%s is not a valid regex. Skipping.", characterSet))
+				continue
+			}
+			if !re.MatchString(password) {
+				reasons = append(reasons, "characters")
+				messages = append(messages, fmt.Sprintf("Password should contain at least one character matching these groups of characters: %s", strings.Join(config.Password.RequiredCharacters, ", ")))
+				break
+			}
+		}
+	}
+
+	if config.Password.HIBP.Enabled {
+		pwned, err := a.hibpClient.Check(ctx, password)
+		if err != nil {
+			if config.Password.HIBP.FailClosed {
+				return internalServerError("Unable to perform password strength check with HaveIBeenPwned.org.").WithInternalError(err)
+			} else {
+				logrus.WithError(err).Warn("Unable to perform password strength check with HaveIBeenPwned.org, pwned passwords are being allowed")
+			}
+		} else if pwned {
+			reasons = append(reasons, "pwned")
+			messages = append(messages, "Password is known to be weak and easy to guess, please choose a different one.")
+		}
+	}
+
+	if len(reasons) > 0 {
+		return &WeakPasswordError{
+			Message:            strings.Join(messages, " "),
+			Reasons:            reasons,
+			MinLength:          config.Password.MinLength,
+			RequiredCharacters: config.Password.RequiredCharacters,
+		}
+	}
+
+	return nil
+}
