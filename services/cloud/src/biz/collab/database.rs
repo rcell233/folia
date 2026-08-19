@@ -12,7 +12,8 @@ use collab_database::{
   error::DatabaseError,
   fields::{
     date_type_option::DateTypeOption, default_field_settings_for_fields,
-    select_type_option::SingleSelectTypeOption, Field, TypeOptionData,
+    select_type_option::{SelectTypeOption, SingleSelectTypeOption},
+    Field, TypeOptionData,
   },
   views::{
     BoardLayoutSetting, CalendarLayoutSetting, DatabaseLayout, FieldSettingsByFieldIdMap, Group,
@@ -59,7 +60,9 @@ fn resolve_board_dependencies(
   let database_layout = DatabaseLayout::Board;
   let (group_field, all_fields, deps_fields) = match original_fields
     .iter()
-    .find(|f| FieldType::from(f.field_type).can_be_group())
+    .filter_map(|field| board_group_field_priority(field).map(|priority| (priority, field)))
+    .min_by_key(|(priority, _)| *priority)
+    .map(|(_, field)| field)
   {
     Some(field) => (field.clone(), original_fields.to_vec(), vec![]),
     None => {
@@ -71,10 +74,10 @@ fn resolve_board_dependencies(
   };
   let field_settings = default_field_settings_for_fields(&all_fields, database_layout);
   let group_ids = match FieldType::from(group_field.field_type) {
-    FieldType::SingleSelect => {
+    FieldType::SingleSelect | FieldType::MultiSelect => {
       let mut group_ids = vec![group_field.id.clone()];
-      let single_select_type_option_ids = single_select_type_option_ids_from_field(&group_field)?;
-      group_ids.extend(single_select_type_option_ids);
+      let select_type_option_ids = select_type_option_ids_from_field(&group_field)?;
+      group_ids.extend(select_type_option_ids);
       Ok(group_ids)
     },
     FieldType::Checkbox => Ok(vec!["Yes".to_string(), "No".to_string()]),
@@ -104,21 +107,40 @@ fn resolve_board_dependencies(
   })
 }
 
-fn single_select_type_option_ids_from_field(field: &Field) -> Result<Vec<String>, AppError> {
+fn board_group_field_priority(field: &Field) -> Option<u8> {
+  match FieldType::from(field.field_type) {
+    FieldType::SingleSelect if is_status_field_name(&field.name) => Some(0),
+    FieldType::SingleSelect => Some(1),
+    FieldType::MultiSelect => Some(2),
+    FieldType::Checkbox => Some(3),
+    _ => None,
+  }
+}
+
+fn is_status_field_name(name: &str) -> bool {
+  let normalized = name.trim().to_lowercase();
+
+  ["status", "state", "状态", "进度", "阶段"]
+    .iter()
+    .any(|keyword| normalized.contains(keyword))
+}
+
+fn select_type_option_ids_from_field(field: &Field) -> Result<Vec<String>, AppError> {
+  let field_type = FieldType::from(field.field_type);
   let type_option_data: Option<&TypeOptionData> =
-    field.type_options.get(&FieldType::SingleSelect.to_string());
+    field.type_options.get(&field_type.to_string());
   match type_option_data {
     Some(type_option_data) => {
-      let single_select_type_option = SingleSelectTypeOption::from(type_option_data.to_owned());
-      let single_select_type_option_ids: Vec<String> = single_select_type_option
+      let select_type_option = SelectTypeOption::from(type_option_data.to_owned());
+      let select_type_option_ids: Vec<String> = select_type_option
         .options
         .iter()
         .map(|option| option.id.clone())
         .collect();
-      Ok(single_select_type_option_ids)
+      Ok(select_type_option_ids)
     },
     None => Err(AppError::Internal(anyhow::anyhow!(
-      "invalid field for single select type options",
+      "invalid field for select type options",
     ))),
   }
 }
@@ -324,6 +346,71 @@ mod tests {
     assert_eq!(group_setting.groups.len(), 2);
     assert_eq!(group_setting.groups[0].id, card_status_field.id);
     assert_eq!(group_setting.groups[1].id, card_status_option_ids[0]);
+
+    let multi_select_option = SelectOption::with_color("Sci-fi", SelectOptionColor::Blue);
+    let multi_select_option_id = multi_select_option.id.clone();
+    let mut multi_select_type_option = SelectTypeOption::default();
+    multi_select_type_option.options.push(multi_select_option);
+    let multi_select_field = Field::new(
+      gen_field_id(),
+      "Tags".to_string(),
+      FieldType::MultiSelect.into(),
+      false,
+    )
+    .with_type_option_data(FieldType::MultiSelect, multi_select_type_option.into());
+    let fields = vec![multi_select_field.clone()];
+    let dependencies =
+      resolve_dependencies_when_create_database_linked_view(database_layout, &fields).unwrap();
+    assert!(dependencies.deps_fields.is_empty());
+    let group_setting = GroupSetting::try_from(dependencies.group_settings[0].clone()).unwrap();
+    assert_eq!(group_setting.field_id, multi_select_field.id);
+    assert_eq!(group_setting.field_type, FieldType::MultiSelect as i64);
+    assert_eq!(
+      group_setting
+        .groups
+        .iter()
+        .map(|group| group.id.as_str())
+        .collect::<Vec<_>>(),
+      vec![multi_select_field.id.as_str(), multi_select_option_id.as_str()]
+    );
+  }
+
+  #[test]
+  fn test_board_group_field_priority_matches_notion_defaults() {
+    let fields = vec![
+      Field::from_field_type("Done", FieldType::Checkbox, false),
+      Field::from_field_type("Tags", FieldType::MultiSelect, false),
+      Field::from_field_type("Category", FieldType::SingleSelect, false),
+      Field::from_field_type("观看状态", FieldType::SingleSelect, false),
+    ];
+
+    let dependencies =
+      resolve_dependencies_when_create_database_linked_view(DatabaseLayout::Board, &fields)
+        .unwrap();
+    let group_setting = GroupSetting::try_from(dependencies.group_settings[0].clone()).unwrap();
+
+    assert_eq!(group_setting.field_id, fields[3].id);
+    assert_eq!(group_setting.field_type, FieldType::SingleSelect as i64);
+    assert!(dependencies.deps_fields.is_empty());
+  }
+
+  #[test]
+  fn test_board_creates_status_when_no_compatible_group_field_exists() {
+    let fields = vec![
+      Field::from_field_type("Website", FieldType::URL, false),
+      Field::from_field_type("Title", FieldType::RichText, true),
+    ];
+
+    let dependencies =
+      resolve_dependencies_when_create_database_linked_view(DatabaseLayout::Board, &fields)
+        .unwrap();
+
+    assert_eq!(dependencies.deps_fields.len(), 1);
+    assert_eq!(dependencies.deps_fields[0].name, "Status");
+    assert_eq!(
+      dependencies.deps_fields[0].field_type,
+      FieldType::SingleSelect as i64
+    );
   }
 
   #[test]
