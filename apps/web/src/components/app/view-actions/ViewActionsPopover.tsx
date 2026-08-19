@@ -1,0 +1,72 @@
+import React, { useCallback, useMemo } from 'react';
+
+import { View } from '@/application/types';
+import AddPageActions from '@/components/app/view-actions/AddPageActions';
+import MorePageActions from '@/components/app/view-actions/MorePageActions';
+import MoreSpaceActions from '@/components/app/view-actions/MoreSpaceActions';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
+function ViewActionsPopover ({
+  popoverType,
+  view,
+  children,
+  open,
+  onOpenChange,
+}: {
+  view?: View;
+  popoverType?: {
+    category: 'space' | 'page';
+    type: 'more' | 'add';
+  },
+  children: React.ReactNode;
+} & React.ComponentProps<typeof DropdownMenu>) {
+
+  const onClose = useCallback(() => {
+    onOpenChange?.(false);
+  }, [onOpenChange]);
+
+  const popoverContent = useMemo(() => {
+    if (!popoverType || !view) return null;
+
+    if (popoverType.type === 'add') {
+      return <AddPageActions
+        view={view}
+      />;
+    }
+
+    if (popoverType.category === 'space') {
+      return <MoreSpaceActions
+        onClose={onClose}
+        view={view}
+      />;
+    } else {
+      return <MorePageActions
+        view={view}
+        onClose={onClose}
+      />;
+    }
+  }, [onClose, popoverType, view]);
+
+  return (
+    <DropdownMenu
+      open={open}
+      onOpenChange={onOpenChange}
+    >
+      <DropdownMenuTrigger asChild>
+        {children}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        data-testid="view-actions-popover"
+        align={'start'}
+        onCloseAutoFocus={e => {
+          e.preventDefault();
+        }}
+      >
+        {popoverContent}
+      </DropdownMenuContent>
+
+    </DropdownMenu>
+  );
+}
+
+export default ViewActionsPopover;

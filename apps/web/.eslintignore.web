@@ -1,0 +1,13 @@
+node_modules/
+dist/
+storybook-static/
+.eslintrc.cjs
+tsconfig.json
+vite.config.ts
+vite-env.d.ts
+coverage/
+src/proto/**/*
+cypress/e2e/
+cypress/support/
+deploy/*.test.ts
+deploy/*.integration.test.ts
