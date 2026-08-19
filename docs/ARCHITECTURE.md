@@ -60,16 +60,16 @@ images. A manual run may select one component, but it also remains build-only.
 A `vX.Y.Z` tag invokes the release workflow. After confirming that `VERSION` and
 `release/manifest.yaml` declare `X.Y.Z`, it builds all five images in parallel on
 `ubuntu-24.04` for `linux/amd64`, each under a unique candidate tag. A final job
-runs only after all five builds succeed, rejects an existing version tag, and
-promotes the candidates to the version tag and the same commit SHA tag. Only
-that promoted set is a compatible release.
+runs only after all five builds succeed, rejects an existing version tag that
+points elsewhere, and promotes the candidates to the version tag and the same
+commit SHA tag. Only that promoted set is a compatible release.
 
 GHCR is the only registry for Folia-built images. Release and SHA tags are
 protected from overwrite by the release workflow, and there is no floating
 `latest` channel. GHCR has no cross-package transaction, so an infrastructure
-failure during final promotion can still leave a partial set; that version must
-not be deployed or overwritten. Production may additionally pin the reported
-image digests when stricter artifact identity is required.
+failure during final promotion can still temporarily leave a partial set; the
+unchanged promotion job can resume it idempotently. Production may additionally
+pin the reported image digests when stricter artifact identity is required.
 
 Local tools use `compose.yaml` plus `compose.build.yaml` for troubleshooting or
 emergency builds. Production uses only `compose.yaml`, which contains no source

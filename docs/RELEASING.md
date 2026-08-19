@@ -35,7 +35,8 @@ The tag starts `.github/workflows/release.yml`. It first verifies that the tag
 is exactly `vX.Y.Z` and that `VERSION`, `release/manifest.yaml`, and the Compose
 image defaults all declare `X.Y.Z`. It then builds all five images in parallel
 on separate `ubuntu-24.04` runners for `linux/amd64`. Each build initially pushes
-only a unique `candidate-<run>-<attempt>` tag.
+only a unique `candidate-<run>` tag. Keeping the candidate stable within one
+workflow run allows GitHub to rerun only failed matrix jobs.
 
 After every candidate build succeeds, one promotion job verifies that no
 `X.Y.Z` tag already exists and that an existing commit tag, if any, has the same
@@ -64,12 +65,14 @@ Wait for the candidate matrix and the final promotion job to succeed. A
 candidate build failure creates no version tags. Candidate tags are internal
 build artifacts and are never deployable releases.
 
-For a transient build or registry failure before promotion, rerun the workflow
-only for the unchanged tag and commit. GHCR cannot atomically update five
-packages, so a failure during final promotion can still leave some version tags.
-The workflow will refuse to overwrite that partial set on a rerun. Treat the
-version as failed, fix the cause on `main`, and issue a new version rather than
-moving the old Git tag or overwriting image tags.
+For a transient build or registry failure, rerun only the failed jobs for the
+unchanged tag and commit. GHCR cannot atomically update five packages, so a
+failure during final promotion can temporarily leave some version tags. The
+promotion is idempotent when those tags still point to the same candidates and
+can safely continue on a rerun. It refuses any tag that points to a different
+digest. If recovery requires changed source, metadata, or workflows, fix the
+cause on `main` and issue a new version rather than moving or overwriting the old
+release.
 
 After the first publication of each package, choose its GHCR visibility once:
 

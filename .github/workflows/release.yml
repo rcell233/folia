@@ -87,7 +87,7 @@ jobs:
         with:
           component: ${{ matrix.component }}
           push: "true"
-          tags: ghcr.io/${{ github.repository_owner }}/folia-${{ matrix.component }}:candidate-${{ github.run_id }}-${{ github.run_attempt }}
+          tags: ghcr.io/${{ github.repository_owner }}/folia-${{ matrix.component }}:candidate-${{ github.run_id }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -121,7 +121,7 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           VERSION: ${{ needs.prepare.outputs.version }}
           REVISION: ${{ github.sha }}
-          CANDIDATE: candidate-${{ github.run_id }}-${{ github.run_attempt }}
+          CANDIDATE: candidate-${{ github.run_id }}
         run: |
           set -euo pipefail
 
@@ -162,8 +162,10 @@ jobs:
             fi
 
             if existing_digest="$(inspect_digest "${version_ref}")"; then
-              echo "Refusing to overwrite existing release tag ${version_ref} (${existing_digest})." >&2
-              exit 1
+              if [[ "${existing_digest}" != "${candidate_digest}" ]]; then
+                echo "Refusing to redirect ${version_ref} from ${existing_digest} to ${candidate_digest}." >&2
+                exit 1
+              fi
             else
               status=$?
               if [[ ${status} -ne 1 ]]; then
@@ -191,6 +193,7 @@ jobs:
             revision_ref="${image}:sha-${REVISION}"
 
             docker buildx imagetools create \
+              --prefer-index=false \
               --tag "${version_ref}" \
               --tag "${revision_ref}" \
               "${candidate_ref}"
