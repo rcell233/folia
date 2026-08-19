@@ -1,0 +1,22 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Persistent and generated data
+/data/
+/backups/
+/secrets/
+/dist/
+/target/
+/node_modules/
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
+*.swp
