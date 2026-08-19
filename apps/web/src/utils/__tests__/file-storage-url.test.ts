@@ -43,9 +43,11 @@ describe('file-storage-url utils', () => {
             expect(resolveFileUrl(fullUrl, mockWorkspaceId, mockViewId)).toBe(fullUrl);
         });
 
-        it('should return the URL as-is if it is a local full URL', () => {
+        it('should rebase a legacy AppFlowy file URL onto the configured origin', () => {
             const fullUrl = 'http://localhost:8000/api/file_storage/test.png';
-            expect(resolveFileUrl(fullUrl, mockWorkspaceId, mockViewId)).toBe(fullUrl);
+            expect(resolveFileUrl(fullUrl, mockWorkspaceId, mockViewId)).toBe(
+                `${mockBaseUrl}/api/file_storage/test.png`
+            );
         });
 
         it('should construct a full AppFlowy file storage URL when given a file ID', () => {
@@ -76,6 +78,11 @@ describe('file-storage-url utils', () => {
 
             // Test matching origin and path
             const url = `${mockBaseUrl}/api/file_storage/file-id`;
+            expect(isAppFlowyFileStorageUrl(url)).toBe(true);
+        });
+
+        it('should recognize AppFlowy file paths from a legacy deployment origin', () => {
+            const url = 'http://192.168.50.13:8088/api/file_storage/file-id';
             expect(isAppFlowyFileStorageUrl(url)).toBe(true);
         });
 

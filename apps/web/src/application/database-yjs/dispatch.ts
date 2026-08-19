@@ -2186,35 +2186,42 @@ function generateBoardLayoutSettings() {
   return layoutSettings;
 }
 
-function generateBoardGroup(database: YDatabase, fieldOrders: YDatabaseFieldOrders) {
-  const groups = new Y.Array() as YDatabaseGroups;
-  let groupField: YDatabaseField | undefined;
+function getBoardGroupFieldPriority(field: YDatabaseField): number | undefined {
+  const fieldType = Number(field.get(YjsDatabaseKey.type)) as FieldType;
 
-  fieldOrders.toArray().some(({ id }) => {
+  if (fieldType === FieldType.SingleSelect) {
+    const normalizedName = String(field.get(YjsDatabaseKey.name) ?? '')
+      .trim()
+      .toLocaleLowerCase();
+    const isStatusField = ['status', 'state', '状态', '进度', '阶段'].some((keyword) =>
+      normalizedName.includes(keyword)
+    );
+
+    return isStatusField ? 0 : 1;
+  }
+
+  if (fieldType === FieldType.MultiSelect) return 2;
+  if (fieldType === FieldType.Checkbox) return 3;
+
+  return undefined;
+}
+
+function findDefaultBoardGroupField(database: YDatabase, fieldOrders: YDatabaseFieldOrders) {
+  return fieldOrders.toArray().reduce<{ field: YDatabaseField; priority: number } | undefined>((selected, { id }) => {
     const field = database.get(YjsDatabaseKey.fields)?.get(id);
 
-    if (!field) {
-      return;
-    }
+    if (!field) return selected;
 
-    const type = Number(field.get(YjsDatabaseKey.type));
+    const priority = getBoardGroupFieldPriority(field);
 
-    if (
-      [
-        FieldType.SingleSelect,
-        FieldType.MultiSelect,
-        FieldType.Checkbox,
-        // FieldType.DateTime,
-        // FieldType.CreatedTime,
-        // FieldType.LastEditedTime,
-      ].includes(type)
-    ) {
-      groupField = field;
-      return true;
-    }
+    if (priority === undefined || (selected && selected.priority <= priority)) return selected;
 
-    return false;
-  });
+    return { field, priority };
+  }, undefined)?.field;
+}
+
+function generateBoardGroup(groupField: YDatabaseField | undefined) {
+  const groups = new Y.Array() as YDatabaseGroups;
 
   if (groupField) {
     const group = generateGroupByField(groupField);
@@ -2223,6 +2230,58 @@ function generateBoardGroup(database: YDatabase, fieldOrders: YDatabaseFieldOrde
   }
 
   return groups;
+}
+
+function useEnhanceBoardGroupFieldExists() {
+  const database = useDatabase();
+  const fields = database.get(YjsDatabaseKey.fields);
+  const sharedRoot = useSharedRoot();
+
+  return useCallback(
+    (fieldOrders: YDatabaseFieldOrders) => {
+      let groupField = findDefaultBoardGroupField(database, fieldOrders);
+
+      if (!groupField) {
+        const fieldId = nanoid(6);
+
+        groupField = createField(FieldType.SingleSelect, fieldId);
+        groupField.set(YjsDatabaseKey.name, 'Status');
+        fields.set(fieldId, groupField);
+
+        executeOperationWithAllViews(
+          sharedRoot,
+          database,
+          (view) => {
+            const viewFieldOrders = view.get(YjsDatabaseKey.field_orders);
+            const fieldSettings = view.get(YjsDatabaseKey.field_settings);
+
+            if (!fieldSettings) throw new Error('Field settings not found');
+
+            viewFieldOrders.push([{ id: fieldId }]);
+
+            const setting = new Y.Map() as YDatabaseFieldSetting;
+
+            setting.set(YjsDatabaseKey.visibility, FieldVisibility.AlwaysShown);
+            fieldSettings.set(fieldId, setting);
+          },
+          'newBoardStatusField'
+        );
+      }
+
+      return groupField;
+    },
+    [database, fields, sharedRoot]
+  );
+}
+
+function hasBoardCompatibleGroup(database: YDatabase, groups: YDatabaseGroups | undefined) {
+  if (!groups?.length) return false;
+
+  const fieldId = groups.get(0)?.get(YjsDatabaseKey.field_id);
+  const field = fieldId ? database.get(YjsDatabaseKey.fields)?.get(fieldId) : undefined;
+  const fieldType = Number(field?.get(YjsDatabaseKey.type)) as FieldType;
+
+  return [FieldType.SingleSelect, FieldType.MultiSelect, FieldType.Checkbox].includes(fieldType);
 }
 
 function generateCalendarLayoutSettings(fieldId: FieldId, _defaultTimeSetting: DefaultTimeSetting) {
@@ -2423,6 +2482,7 @@ export function useUpdateDatabaseLayout(viewId: string) {
   const database = useDatabase();
   const sharedRoot = useSharedRoot();
 
+  const enhanceBoardGroupFieldExists = useEnhanceBoardGroupFieldExists();
   const enhanceCalendarLayoutByFieldExists = useEnhanceCalendarLayoutByFieldExists();
   const defaultTimeSetting = useDefaultTimeSetting();
 
@@ -2445,7 +2505,10 @@ export function useUpdateDatabaseLayout(viewId: string) {
             const fieldOrders = view.get(YjsDatabaseKey.field_orders);
 
             if (layout === DatabaseViewLayout.Board) {
-              const groups = generateBoardGroup(database, fieldOrders);
+              const currentGroups = view.get(YjsDatabaseKey.groups);
+              const groups = hasBoardCompatibleGroup(database, currentGroups)
+                ? currentGroups
+                : generateBoardGroup(enhanceBoardGroupFieldExists(fieldOrders));
               const settings = generateBoardSetting(database);
               const layoutSettings = generateBoardLayoutSettings();
 
@@ -2475,7 +2538,14 @@ export function useUpdateDatabaseLayout(viewId: string) {
         'updateDatabaseLayout'
       );
     },
-    [database, defaultTimeSetting, enhanceCalendarLayoutByFieldExists, sharedRoot, viewId]
+    [
+      database,
+      defaultTimeSetting,
+      enhanceBoardGroupFieldExists,
+      enhanceCalendarLayoutByFieldExists,
+      sharedRoot,
+      viewId,
+    ]
   );
 }
 

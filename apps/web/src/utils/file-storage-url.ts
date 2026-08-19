@@ -80,11 +80,39 @@ export function isAppFlowyFileStorageUrl(url: string): boolean {
     return false;
   }
 
-  const isFirstParty = parsedUrl.origin === origin;
   const normalizedBasePath = basePathname.startsWith('/') ? basePathname : `/${basePathname}`;
   const isFileStoragePath = parsedUrl.pathname.startsWith(normalizedBasePath);
 
-  return isFirstParty && isFileStoragePath;
+  // File-storage URLs are first-party resources even when an offline Yjs copy
+  // still contains the origin used by an older deployment.
+  return isFileStoragePath;
+}
+
+/**
+ * Rebase AppFlowy-owned file-storage URLs onto the currently configured origin.
+ *
+ * AppFlowy documents are cached offline in IndexedDB. After a deployment URL
+ * migration, a browser can therefore briefly surface an otherwise-migrated old
+ * absolute URL. Rewriting only the well-known file-storage path keeps those
+ * cached documents usable without deleting local/offline edits.
+ */
+export function normalizeAppFlowyFileStorageUrl(url: string): string {
+  if (!url) return '';
+
+  const { origin, pathname: basePathname } = resolveAppflowyOriginAndPathname();
+
+  if (!origin || !basePathname) return url;
+
+  try {
+    const parsedUrl = new URL(url, origin);
+    const normalizedBasePath = basePathname.startsWith('/') ? basePathname : `/${basePathname}`;
+
+    if (!parsedUrl.pathname.startsWith(normalizedBasePath)) return url;
+
+    return `${origin}${parsedUrl.pathname}${parsedUrl.search}${parsedUrl.hash}`;
+  } catch {
+    return url;
+  }
 }
 
 /**
@@ -193,7 +221,7 @@ export function resolveFileUrl(
   if (!urlOrId) return '';
 
   if (isFileURL(urlOrId)) {
-    return urlOrId;
+    return normalizeAppFlowyFileStorageUrl(urlOrId);
   }
 
   return getAppFlowyFileUrl(workspaceId, viewId, urlOrId);

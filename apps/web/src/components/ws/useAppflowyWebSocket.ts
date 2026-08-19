@@ -105,7 +105,8 @@ export const useAppflowyWebSocket = (options: Options): AppflowyWebSocketType =>
     workspaceId: options.workspaceId,
     deviceId: options.deviceId,
   });
-  const url = `${options.url}/${options.workspaceId}/?clientId=${options.clientId}&deviceId=${options.deviceId}&token=${options.token}&cv=0.10.0&cp=web`;
+  const [reconnectNonce, setReconnectNonce] = useState(0);
+  const url = `${options.url}/${options.workspaceId}/?clientId=${options.clientId}&deviceId=${options.deviceId}&token=${options.token}&cv=0.10.0&cp=web&rn=${reconnectNonce}`;
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
   const { lastMessage, sendMessage, readyState, getWebSocket } = useWebSocket(url, {
     share: true,
@@ -205,7 +206,12 @@ export const useAppflowyWebSocket = (options: Options): AppflowyWebSocketType =>
 
   const manualReconnect = useCallback(() => {
     Log.debug('Manual reconnect triggered');
-    window.location.reload();
+    // Changing the socket URL makes react-use-websocket create a fresh
+    // connection without discarding the editor, selection, or unsaved UI
+    // state. A full page reload here made returning to a background tab
+    // unnecessarily disruptive whenever its idle socket had been closed.
+    setReconnectAttempt(0);
+    setReconnectNonce((current) => current + 1);
   }, []);
   const lastProtobufMessage = useMemo(
     () => (lastMessage ? messages.Message.decode(new Uint8Array(lastMessage.data)) : null),

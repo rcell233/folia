@@ -1,11 +1,12 @@
 import { getTokenParsed } from '@/application/session/token';
-import { isAppFlowyFileStorageUrl } from '@/utils/file-storage-url';
+import { isAppFlowyFileStorageUrl, normalizeAppFlowyFileStorageUrl } from '@/utils/file-storage-url';
 import { Log } from '@/utils/log';
 import { getConfigValue } from '@/utils/runtime-config';
 
 const resolveImageUrl = (url: string): string => {
   if (!url) return '';
 
+  if (isAppFlowyFileStorageUrl(url)) return normalizeAppFlowyFileStorageUrl(url);
   return url.startsWith('http') ? url : `${getConfigValue('APPFLOWY_BASE_URL', '')}${url}`;
 };
 

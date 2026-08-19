@@ -541,12 +541,12 @@ export async function updateUserProfile(metadata: Record<string, unknown>): Prom
   );
 }
 
-export async function getWorkspaceMemberProfile(workspaceId: string): Promise<MentionablePerson> {
-  const url = `/api/workspace/${workspaceId}/workspace-profile`;
-
-  return executeAPIRequest<MentionablePerson>(() =>
-    axiosInstance?.get<APIResponse<MentionablePerson>>(url)
-  );
+export async function getWorkspaceMemberProfile(_workspaceId: string): Promise<MentionablePerson | null> {
+  // AppFlowy Community Cloud at the pinned deployment revision does not
+  // expose workspace-profile. Treat it as an optional capability instead of
+  // repeatedly requesting a missing endpoint. WebSocket profile updates and
+  // the ordinary user profile continue to work.
+  return null;
 }
 
 export async function updateWorkspaceMemberProfile(
@@ -2154,10 +2154,9 @@ export async function turnIntoMember(workspaceId: string, email: string) {
 }
 
 
-export async function getShareWithMe(workspaceId: string): Promise<View> {
-  const url = `/api/sharing/workspace/${workspaceId}/folder`;
-
-  return executeAPIRequest<View>(() =>
-    axiosInstance?.get<APIResponse<View>>(url)
-  );
+export async function getShareWithMe(_workspaceId: string): Promise<View | null> {
+  // The pinned Community Cloud does not provide the optional "shared with
+  // me" virtual folder endpoint. An absent folder is already supported by
+  // the outline loader, so avoid a permanent 404 on every page load.
+  return null;
 }

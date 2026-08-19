@@ -115,7 +115,7 @@ export interface WorkspaceService {
   sharePageTo: (workspaceId: string, viewId: string, emails: string[], accessLevel?: AccessLevel) => Promise<void>;
   revokeAccess: (workspaceId: string, viewId: string, emails: string[]) => Promise<void>;
   turnIntoMember: (workspaceId: string, email: string) => Promise<void>;
-  getShareWithMe: (workspaceId: string) => Promise<View>;
+  getShareWithMe: (workspaceId: string) => Promise<View | null>;
 }
 
 export interface AppService {
@@ -149,7 +149,7 @@ export interface AppService {
   getWorkspaces: () => Promise<Workspace[]>;
   getWorkspaceFolder: (workspaceId: string) => Promise<FolderView>;
   getCurrentUser: () => Promise<User>;
-  getWorkspaceMemberProfile: (workspaceId: string) => Promise<MentionablePerson>;
+  getWorkspaceMemberProfile: (workspaceId: string) => Promise<MentionablePerson | null>;
   updateUserProfile: (metadata: Record<string, unknown>) => Promise<void>;
   updateWorkspaceMemberProfile: (workspaceId: string, profile: WorkspaceMemberProfileUpdate) => Promise<void>;
   getUserWorkspaceInfo: () => Promise<UserWorkspaceInfo>;
