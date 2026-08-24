@@ -13,6 +13,11 @@ import { useAppOutline } from '@/components/app/app.hooks';
 import { DATABASE_TAB_VIEW_ID_QUERY_PARAM } from '@/components/app/hooks/resolveSidebarSelectedViewId';
 import { Database } from '@/components/database';
 import { useContainerVisibleViewIds } from '@/components/database/hooks';
+import {
+  readDatabaseViewSelection,
+  resolveDatabaseViewSelection,
+  writeDatabaseViewSelection,
+} from '@/utils/database-view-selection';
 
 import ViewMetaPreview from 'src/components/view-meta/ViewMetaPreview';
 
@@ -41,6 +46,7 @@ function DatabaseView(props: DatabaseViewProps) {
 
   // Use container view (if present) as the "page meta" view for naming/icon operations.
   const pageView = containerView || view;
+  const selectionStorageId = containerView?.view_id || databasePageId;
 
   const pageMeta = useMemo(() => {
     if (!pageView) {
@@ -58,22 +64,15 @@ function DatabaseView(props: DatabaseViewProps) {
     };
   }, [pageView, viewMeta]);
 
-  /**
-   * The currently active/selected view tab ID (Grid, Board, or Calendar).
-   * Comes from URL param 'v', defaults to databasePageId when not specified.
-   */
-  const activeViewId = useMemo(() => {
-    return search.get(DATABASE_TAB_VIEW_ID_QUERY_PARAM) || databasePageId;
-  }, [search, databasePageId]);
-
   const handleChangeView = useCallback(
     (viewId: string) => {
+      writeDatabaseViewSelection(selectionStorageId, viewId);
       setSearch((prev) => {
         prev.set(DATABASE_TAB_VIEW_ID_QUERY_PARAM, viewId);
         return prev;
       });
     },
-    [setSearch]
+    [selectionStorageId, setSearch]
   );
 
   const handleNavigateToRow = useCallback(
@@ -94,6 +93,27 @@ function DatabaseView(props: DatabaseViewProps) {
   const [, forceUpdate] = useState(0);
   const dataSection = doc?.getMap(YjsEditorKey.data_section);
   const database = dataSection?.get(YjsEditorKey.database) as YDatabase | undefined;
+  const databaseViewIds = database?.get(YjsDatabaseKey.views)
+    ? Array.from(database.get(YjsDatabaseKey.views)?.keys() || [])
+    : [];
+  const validViewIds = visibleViewIds?.length ? visibleViewIds : databaseViewIds;
+
+  /**
+   * Explicit view links win. Otherwise restore the last valid tab selected for
+   * this database page, then fall back to the route/default view.
+   */
+  const activeViewId = resolveDatabaseViewSelection({
+    routeViewId: databasePageId,
+    tabViewId: search.get(DATABASE_TAB_VIEW_ID_QUERY_PARAM),
+    storedViewId: readDatabaseViewSelection(selectionStorageId),
+    validViewIds,
+  });
+
+  useEffect(() => {
+    if (validViewIds.includes(activeViewId)) {
+      writeDatabaseViewSelection(selectionStorageId, activeViewId);
+    }
+  }, [activeViewId, selectionStorageId, validViewIds]);
 
   // Ref to track if database is available
   const databaseRef = useRef(database);

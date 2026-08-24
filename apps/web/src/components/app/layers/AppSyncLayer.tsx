@@ -6,6 +6,7 @@ import { Awareness } from 'y-protocols/awareness';
 import { APP_EVENTS } from '@/application/constants';
 import { db } from '@/application/db';
 import { getTokenParsed } from '@/application/session/token';
+import { isForceSaveShortcut } from '@/components/app/force-save';
 import { useAppflowyWebSocket, useBroadcastChannel, useSync } from '@/components/ws';
 import { notification } from '@/proto/messages';
 
@@ -22,6 +23,8 @@ interface AppSyncLayerProps {
 export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
   const { service, currentWorkspaceId, isAuthenticated } = useAuthInternal();
   const [awarenessMap] = useState<Record<string, Awareness>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const forceSavePromiseRef = useRef<Promise<void> | null>(null);
   const eventEmitterRef = useRef<EventEmitter>(new EventEmitter());
 
   useEffect(() => {
@@ -50,6 +53,36 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
 
   // Initialize sync context for collaborative editing
   const { registerSyncContext, lastUpdatedCollab, flushAllSync, syncAllToServer } = useSync(webSocket, broadcastChannel, eventEmitterRef.current);
+
+  const forceSave = useCallback(() => {
+    if (!currentWorkspaceId) return Promise.resolve();
+
+    setIsSaving(true);
+    if (forceSavePromiseRef.current) return forceSavePromiseRef.current;
+
+    const savePromise = syncAllToServer(currentWorkspaceId)
+      .then((saved) => {
+        if (saved) setIsSaving(false);
+      })
+      .finally(() => {
+        forceSavePromiseRef.current = null;
+      });
+
+    forceSavePromiseRef.current = savePromise;
+    return savePromise;
+  }, [currentWorkspaceId, syncAllToServer]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isForceSaveShortcut(event)) return;
+
+      event.preventDefault();
+      if (!event.repeat) void forceSave();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [forceSave]);
 
   // Handle WebSocket reconnection
   const reconnectWebSocket = useCallback(() => {
@@ -294,10 +327,11 @@ export const AppSyncLayer: React.FC<AppSyncLayerProps> = ({ children }) => {
       eventEmitter: eventEmitterRef.current,
       awarenessMap,
       lastUpdatedCollab,
+      isSaving,
       flushAllSync,
       syncAllToServer,
     }),
-    [webSocket, broadcastChannel, registerSyncContext, awarenessMap, lastUpdatedCollab, flushAllSync, syncAllToServer]
+    [webSocket, broadcastChannel, registerSyncContext, awarenessMap, lastUpdatedCollab, isSaving, flushAllSync, syncAllToServer]
   );
 
   return <SyncInternalContext.Provider value={syncContextValue}>{children}</SyncInternalContext.Provider>;

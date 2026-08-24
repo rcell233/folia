@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import {
+  readDatabaseViewSelection,
+  resolveDatabaseViewSelection,
+  writeDatabaseViewSelection,
+} from '@/utils/database-view-selection';
+
 interface UseViewSelectionProps {
   /**
    * The initial/default view ID
@@ -39,10 +45,14 @@ export function useViewSelection({
   // Auto-select appropriate view when visibleViewIds changes
   useEffect(() => {
     if (!initialSelectionDoneRef.current && visibleViewIds.length > 0) {
-      // Initial selection: prefer viewId if valid, otherwise first visible
-      const initialView = visibleViewIds.includes(viewId) ? viewId : visibleViewIds[0];
+      const initialView = resolveDatabaseViewSelection({
+        routeViewId: viewId,
+        storedViewId: readDatabaseViewSelection(viewId),
+        validViewIds: visibleViewIds,
+      });
 
       setSelectedViewId(initialView);
+      writeDatabaseViewSelection(viewId, initialView);
       initialSelectionDoneRef.current = true;
     } else if (initialSelectionDoneRef.current && visibleViewIds.length > 0) {
       // After initial: ensure selected view is still valid
@@ -56,17 +66,25 @@ export function useViewSelection({
     }
   }, [viewId, visibleViewIds]);
 
-  const onChangeView = useCallback((newViewId: string) => {
-    setSelectedViewId(newViewId);
-  }, []);
+  const onChangeView = useCallback(
+    (newViewId: string) => {
+      setSelectedViewId(newViewId);
+      writeDatabaseViewSelection(viewId, newViewId);
+    },
+    [viewId]
+  );
 
   /**
    * Called when a new view is added (e.g., via + button).
    * Automatically selects the newly added view.
    */
-  const onViewAddedSelection = useCallback((newViewId: string) => {
-    setSelectedViewId(newViewId);
-  }, []);
+  const onViewAddedSelection = useCallback(
+    (newViewId: string) => {
+      setSelectedViewId(newViewId);
+      writeDatabaseViewSelection(viewId, newViewId);
+    },
+    [viewId]
+  );
 
   return { selectedViewId, onChangeView, onViewAddedSelection };
 }

@@ -8,6 +8,7 @@ import { useOutlinePopover } from '@/components/_shared/outline/outline.hooks';
 import OutlinePopover from '@/components/_shared/outline/OutlinePopover';
 import BreadcrumbSkeleton from '@/components/_shared/skeleton/BreadcrumbSkeleton';
 import { AppContext, useAppHandlers, useBreadcrumb } from '@/components/app/app.hooks';
+import { useSyncInternalOptional } from '@/components/app/contexts/SyncInternalContext';
 import Recent from '@/components/app/recent/Recent';
 
 const RightMenu = lazy(() => import('@/components/app/header/RightMenu'));
@@ -37,6 +38,7 @@ export function AppHeader({ onOpenDrawer, openDrawer, onCloseDrawer }: AppHeader
 
   const toView = useAppHandlers().toView;
   const rendered = useContext(AppContext)?.rendered;
+  const isSaving = useSyncInternalOptional()?.isSaving ?? false;
 
   const recent = useMemo(() => <Recent />, []);
 
@@ -82,7 +84,19 @@ export function AppHeader({ onOpenDrawer, openDrawer, onCloseDrawer }: AppHeader
               <BreadcrumbSkeleton />
             </div>
           ) : (
-            <Breadcrumb toView={toView} variant={UIVariant.App} crumbs={crumbs} />
+            <div className='flex h-full min-w-0 items-center gap-2'>
+              <div className='min-w-0 overflow-hidden'>
+                <Breadcrumb toView={toView} variant={UIVariant.App} crumbs={crumbs} />
+              </div>
+              {isSaving && (
+                <span
+                  data-testid='page-saving-indicator'
+                  className='shrink-0 whitespace-nowrap text-xs text-text-tertiary'
+                >
+                  Saving…
+                </span>
+              )}
+            </div>
           )}
         </div>
         {rendered && (

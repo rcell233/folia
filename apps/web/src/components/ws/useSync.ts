@@ -54,7 +54,7 @@ export type SyncContextType = {
    * @param workspaceId - The workspace ID
    * @returns Promise that resolves when all syncs are complete
    */
-  syncAllToServer: (workspaceId: string) => Promise<void>;
+  syncAllToServer: (workspaceId: string) => Promise<boolean>;
 };
 
 export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType, eventEmitter?: EventEmitter): SyncContextType => {
@@ -296,7 +296,7 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType, eve
    * This uses the same collab_full_sync_batch API that desktop uses to send
    * all collab states in a single batch request before operations like duplicate.
    */
-  const syncAllToServer = useCallback(async (workspaceId: string) => {
+  const syncAllToServer = useCallback(async (workspaceId: string): Promise<boolean> => {
     // First flush any pending WebSocket updates
     flushAllSync();
 
@@ -333,7 +333,7 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType, eve
 
     if (items.length === 0) {
       Log.debug('No collabs to sync');
-      return;
+      return true;
     }
 
     // Send all collabs in a single batch request (same as desktop's collab_full_sync_batch)
@@ -341,9 +341,10 @@ export const useSync = (ws: AppflowyWebSocketType, bc: BroadcastChannelType, eve
       Log.debug('Sending batch sync request', { itemCount: items.length });
       await collabFullSyncBatch(workspaceId, items);
       Log.debug('Batch sync completed successfully');
+      return true;
     } catch (error) {
       Log.warn('Failed to batch sync collabs to server', { error });
-      // Don't throw - we still want to attempt the duplicate
+      return false;
     }
   }, [flushAllSync]);
 

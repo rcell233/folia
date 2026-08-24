@@ -1,5 +1,32 @@
 # Repository Agent Guidelines
 
+## Web Feature Upstream Reference
+
+- The Web application in this repository starts from an older pinned AppFlowy
+  Web commit. When implementing a requested Web feature, first research
+  Notion's current publicly observable behavior and interaction model for the
+  equivalent feature, using up-to-date online sources. Treat Notion's product
+  behavior as the primary reference for the feature's detailed semantics and
+  user experience.
+- After establishing the intended Notion behavior, inspect the latest publicly
+  available AppFlowy Web source for an equivalent implementation that can be
+  reused.
+- If an upstream implementation exists, prefer porting it into this repository
+  instead of reimplementing it. Adapt the code as needed for this repository's
+  older Web baseline, pinned Cloud API, local compatibility patches, and
+  dependency versions; do not assume that code from the latest upstream branch
+  can be copied without compatibility work.
+- If Notion and the latest AppFlowy Web implement the same feature differently,
+  follow Notion's behavior and interaction logic. Reuse or adapt AppFlowy code
+  only where it supports that behavior; otherwise modify it or implement the
+  differing behavior locally.
+- If no suitable public upstream implementation exists, implement the feature
+  locally using the existing architecture and conventions while following the
+  researched Notion behavior.
+- Preserve applicable upstream attribution and licensing when porting code, and
+  record the upstream revision or source location when that context will help
+  future maintenance.
+
 ## Persistent Data And Schema Changes
 
 - For feature development, prefer solutions that do not add or modify persistent
