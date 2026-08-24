@@ -12,6 +12,57 @@ metadata, builds all five candidates for `linux/amd64`, and promotes them to
 version and commit tags only after every build succeeds. Release procedure and
 recovery rules are in [`RELEASING.md`](RELEASING.md).
 
+## Local source development
+
+The Folia development stack runs Web and Cloud from the checkout while Docker
+runs PostgreSQL, Redis, MinIO, Auth, and Worker. Auth and Worker use the tested
+Folia release images from GHCR; local development does not build them.
+
+Required local tools are Node.js 20 or newer, pnpm 10.9.0, Rust 1.86.0,
+`sqlx-cli` 0.8.1, PostgreSQL client tools, Protobuf, OpenSSL development files,
+and Docker Compose. Cypress checks on Ubuntu additionally require `xvfb`,
+`libnss3`, and `libnspr4`.
+
+Install the Ubuntu 22.04 system packages with:
+
+```bash
+sudo apt-get install -y build-essential clang lld cmake pkg-config \
+  libssl-dev protobuf-compiler libprotobuf-dev postgresql-client \
+  xvfb libnss3 libnspr4
+```
+
+Initialize configuration and start the container services:
+
+```bash
+bash deploy/dev/scripts/up.sh
+```
+
+Install source dependencies once:
+
+```bash
+cd apps/web
+pnpm install --frozen-lockfile
+
+cd ../../services/cloud
+cargo fetch --locked
+```
+
+Run Cloud and Web in separate terminals:
+
+```bash
+bash deploy/dev/scripts/run-cloud.sh
+bash deploy/dev/scripts/run-web.sh
+```
+
+The local endpoints are Web `http://localhost:3000`, Cloud
+`http://localhost:8000`, Auth `http://localhost:9999`, MinIO API
+`http://localhost:9000`, and MinIO Console `http://localhost:9001`. Cloud and
+Auth apply their own database migrations at startup. Container ports bind only
+to `127.0.0.1`, so local development does not require a domain or gateway. Web
+accesses Auth through Vite's same-origin `http://localhost:3000/gotrue` proxy;
+port `9999` remains available for direct API debugging. Stop the container stack
+with `bash deploy/dev/scripts/down.sh`; named volumes preserve local data.
+
 ## Optional local build
 
 Copy and edit the Compose environment once:

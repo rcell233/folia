@@ -12,14 +12,14 @@ token before normalizing the URL. Treat untrusted document URLs as unsafe until
 all authenticated fetches normalize first and verify the current origin. Add an
 adversarial-origin regression test with that fix.
 
-## Database views appear as child pages
+## Database tab order is browser-local
 
-AppFlowy Web 0.10.7 and the pinned Cloud create a new database view as a Folder
-child of the original database page. This differs from the desired same-page tab
-model and is not caused by the Board grouping patch.
-
-The future fix must change the Web/Cloud view topology contract, preserve
-existing views, and avoid creating navigation children for secondary layouts.
+Grid, Board, and Calendar tabs can be dragged into a different order. For the
+legacy standalone database topology used by the pinned Cloud, Web stores that
+order in browser local storage under the database ID. It survives reloads in
+the same browser but does not yet synchronize between browsers or native
+clients. This deliberately avoids adding a PostgreSQL field or inventing a new
+durable Collab schema without a cross-client migration design.
 
 ## Board grouping controls are incomplete
 

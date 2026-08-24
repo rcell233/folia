@@ -19,6 +19,13 @@ pub struct PrivateSpaceAndTrashViews {
   pub view_ids_in_trash: HashSet<Uuid>,
 }
 
+fn is_database_layout(layout: &CollabFolderViewLayout) -> bool {
+  matches!(
+    layout,
+    CollabFolderViewLayout::Grid | CollabFolderViewLayout::Board | CollabFolderViewLayout::Calendar
+  )
+}
+
 pub fn private_space_and_trash_view_ids(
   uid: i64,
   folder: &Folder,
@@ -172,6 +179,18 @@ fn to_folder_view(
     .iter()
     .filter_map(|child_view_id| {
       let child_view_id = Uuid::parse_str(&child_view_id.id).ok()?;
+
+      // Community Cloud stores secondary database layouts as Folder children
+      // so older clients can rename and delete them. They are tabs, not pages,
+      // and must not appear as nested entries in the navigation outline.
+      if is_database_layout(&view.layout)
+        && folder
+          .get_view(&child_view_id.to_string(), uid)
+          .is_some_and(|child| is_database_layout(&child.layout))
+      {
+        return None;
+      }
+
       to_folder_view(
         workspace_id,
         Some(view_id),

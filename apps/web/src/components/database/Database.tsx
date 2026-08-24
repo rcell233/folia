@@ -33,6 +33,9 @@ import { CalendarViewType } from '@/components/database/fullcalendar/types';
 import { DatabaseContextProvider } from './DatabaseContext';
 
 const PRIORITY_ROW_SEED_LIMIT = 200;
+// The pinned Community Cloud does not expose database/{id}/blob/diff.
+// Keep the lazy row-loading path until Cloud advertises this capability.
+const DATABASE_BLOB_DIFF_SUPPORTED = false;
 
 export interface Database2Props {
   workspaceId: string;
@@ -260,9 +263,8 @@ function Database(props: Database2Props) {
   );
 
   const ensureBlobPrefetch = useCallback(() => {
-    // Skip blob prefetch in read-only mode (publish view)
-    // The publish API doesn't support blob/diff endpoint
-    if (readOnly) {
+    // Published views and the pinned Cloud use the existing lazy row loader.
+    if (readOnly || !DATABASE_BLOB_DIFF_SUPPORTED) {
       setBlobPrefetchComplete(true);
       return null;
     }

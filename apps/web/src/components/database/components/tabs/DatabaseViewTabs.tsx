@@ -4,6 +4,7 @@ import * as Y from 'yjs';
 import { YDatabaseView } from '@/application/types';
 import { ReactComponent as ChevronLeft } from '@/assets/icons/alt_arrow_left.svg';
 import { ReactComponent as ChevronRight } from '@/assets/icons/alt_arrow_right.svg';
+import { type ReorderResult, useReorderMonitor } from '@/components/_shared/reorder/useReorderMonitor';
 import { AFScroller } from '@/components/_shared/scroller';
 import { AddViewButton } from '@/components/database/components/tabs/AddViewButton';
 import { DatabaseTabItem } from '@/components/database/components/tabs/DatabaseTabItem';
@@ -11,6 +12,7 @@ import { useTabScroller } from '@/components/database/components/tabs/useTabScro
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList } from '@/components/ui/tabs';
 
+const TAB_DRAG_TYPE = 'database-view-tab';
 
 export interface DatabaseViewTabsProps {
   viewIds: string[];
@@ -33,6 +35,7 @@ export interface DatabaseViewTabsProps {
   pendingScrollToViewId?: string | null;
   setPendingScrollToViewId?: (id: string | null) => void;
   onViewAdded?: (viewId: string) => void;
+  onReorderTabs?: (result: ReorderResult) => void;
 }
 
 export function DatabaseViewTabs({
@@ -50,12 +53,36 @@ export function DatabaseViewTabs({
   setRenameViewId,
   pendingScrollToViewId,
   setPendingScrollToViewId,
-  onViewAdded
+  onViewAdded,
+  onReorderTabs,
 }: DatabaseViewTabsProps) {
   const [tabsWidth, setTabsWidth] = useState<number | null>(null);
   const [tabsContainer, setTabsContainer] = useState<HTMLDivElement | null>(null);
   const tabRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const [reorderInstanceId] = useState(() => Symbol('database-tab-reorder-instance'));
+  const reorderEnabled = !readOnly && Boolean(onReorderTabs) && viewIds.length > 1;
+  const viewIdsRef = useRef(viewIds);
 
+  useEffect(() => {
+    viewIdsRef.current = viewIds;
+  }, [viewIds]);
+
+  const getOrderedIds = useCallback(() => viewIdsRef.current, []);
+  const handleReorder = useCallback(
+    (result: ReorderResult) => {
+      onReorderTabs?.(result);
+    },
+    [onReorderTabs]
+  );
+
+  useReorderMonitor({
+    dragType: TAB_DRAG_TYPE,
+    instanceId: reorderInstanceId,
+    axis: 'horizontal',
+    enabled: reorderEnabled,
+    getOrderedIds,
+    onReorder: handleReorder,
+  });
 
   const {
     setScrollerContainer,
@@ -216,6 +243,7 @@ export function DatabaseViewTabs({
                     onOpenDeleteModal={setDeleteConfirmOpen}
                     onOpenRenameModal={setRenameViewId}
                     setTabRef={setTabRef}
+                    reorderInstanceId={reorderEnabled ? reorderInstanceId : undefined}
                   />
                 );
               })}

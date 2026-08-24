@@ -79,19 +79,6 @@ describe('Database View Tabs', () => {
   };
 
   /**
-   * Helper: Expand database container in sidebar
-   */
-  const expandDatabaseInSidebar = () => {
-    PageSelectors.itemByName('New Database', { timeout: 10000 }).then(($dbItem) => {
-      const expandToggle = $dbItem.find('[data-testid="outline-toggle-expand"]');
-      if (expandToggle.length > 0) {
-        cy.wrap(expandToggle.first()).click({ force: true });
-        waitForReactUpdate(500);
-      }
-    });
-  };
-
-  /**
    * Helper: Add a view via the + button
    */
   const addViewViaButton = (viewType: 'Board' | 'Calendar') => {
@@ -120,8 +107,14 @@ describe('Database View Tabs', () => {
    * Regression test: Previously views wouldn't appear until folder synced (3+ seconds).
    * Now views from Yjs should appear immediately.
    */
-  it('creates multiple views that appear immediately in tab bar and sidebar', () => {
+  it('creates multiple views as tabs without adding sidebar child pages', () => {
     const testEmail = generateRandomEmail();
+    let blobDiffRequestCount = 0;
+
+    cy.intercept('POST', '**/database/*/blob/diff', (request) => {
+      blobDiffRequestCount += 1;
+      request.continue();
+    });
 
     cy.task('log', `[TEST] Multiple views creation - Email: ${testEmail}`);
 
@@ -139,10 +132,7 @@ describe('Database View Tabs', () => {
       cy.task('log', '[STEP 2] Verifying Board tab appears immediately');
       waitForReactUpdate(200);
       cy.get('@initialTabCount').then((initialCount) => {
-        cy.get('[data-testid^="view-tab-"]', { timeout: 1000 }).should(
-          'have.length',
-          (initialCount as number) + 1
-        );
+        cy.get('[data-testid^="view-tab-"]', { timeout: 1000 }).should('have.length', (initialCount as number) + 1);
       });
 
       // Verify Board tab is active
@@ -154,26 +144,22 @@ describe('Database View Tabs', () => {
 
       cy.task('log', '[STEP 4] Verifying Calendar tab appears immediately');
       cy.get('@initialTabCount').then((initialCount) => {
-        cy.get('[data-testid^="view-tab-"]', { timeout: 500 }).should(
-          'have.length',
-          (initialCount as number) + 2
-        );
+        cy.get('[data-testid^="view-tab-"]', { timeout: 500 }).should('have.length', (initialCount as number) + 2);
       });
 
-      // Verify sidebar shows all views
-      cy.task('log', '[STEP 5] Verifying sidebar shows all views');
+      // A database has one navigation page. Its layouts are tabs, not pages.
+      cy.task('log', '[STEP 5] Verifying sidebar keeps one database page');
       ensureSpaceExpanded(spaceName);
       waitForReactUpdate(500);
-      expandDatabaseInSidebar();
+      PageSelectors.itemByName('New Database', { timeout: 10000 }).should('exist');
+      PageSelectors.names().then(($names) => {
+        const sidebarNames = Array.from({ length: $names.length }, (_, index) => $names[index]?.textContent?.trim());
 
-      PageSelectors.itemByName('New Database', { timeout: 10000 }).within(() => {
-        cy.contains('Grid').should('exist');
-        cy.contains('Board').should('exist');
-        cy.contains('Calendar').should('exist');
+        expect(sidebarNames).not.to.include.members(['Grid', 'Board', 'Calendar']);
       });
 
       // Verify tab bar matches
-      DatabaseViewSelectors.viewTab().contains('Grid').should('exist');
+      DatabaseViewSelectors.viewTab().first().should('contain.text', 'New Database');
       DatabaseViewSelectors.viewTab().contains('Board').should('exist');
       DatabaseViewSelectors.viewTab().contains('Calendar').should('exist');
 
@@ -193,6 +179,9 @@ describe('Database View Tabs', () => {
       cy.get('@initialTabCount').then((initialCount) => {
         DatabaseViewSelectors.viewTab().should('have.length', (initialCount as number) + 2);
       });
+      cy.then(() => {
+        expect(blobDiffRequestCount).to.equal(0);
+      });
 
       cy.task('log', '[TEST COMPLETE] Multiple views created and persisted');
     });
@@ -208,9 +197,9 @@ describe('Database View Tabs', () => {
 
     const authUtils = new AuthTestUtils();
     createGridAndWait(authUtils, testEmail).then(() => {
-      // Rename Grid -> MyGrid
-      cy.task('log', '[STEP 1] Renaming Grid to MyGrid');
-      openTabMenuByLabel('Grid');
+      // Rename the root Grid view, whose tab initially uses the database page name.
+      cy.task('log', '[STEP 1] Renaming the root view to MyGrid');
+      openTabMenuByLabel('New Database');
       DatabaseViewSelectors.tabActionRename().should('be.visible').click({ force: true });
       ModalSelectors.renameInput().should('be.visible').clear().type('MyGrid');
       ModalSelectors.renameSaveButton().click({ force: true });
@@ -242,9 +231,9 @@ describe('Database View Tabs', () => {
   });
 
   /**
-   * Test: Tab selection updates sidebar selection
+   * Test: Tab selection keeps the database root selected in the sidebar
    */
-  it('tab selection updates sidebar selection', () => {
+  it('keeps one sidebar database page selected while switching tabs', () => {
     const testEmail = generateRandomEmail();
 
     cy.task('log', `[TEST] Tab selection - Email: ${testEmail}`);
@@ -255,42 +244,45 @@ describe('Database View Tabs', () => {
       addViewViaButton('Board');
       waitForReactUpdate(3000);
 
-      // Expand database in sidebar
       ensureSpaceExpanded(spaceName);
       waitForReactUpdate(500);
-      expandDatabaseInSidebar();
 
-      // Click on Grid tab
-      cy.task('log', '[STEP 1] Clicking Grid tab');
-      DatabaseViewSelectors.viewTab().contains('Grid').click({ force: true });
+      // Click on the root Grid tab
+      cy.task('log', '[STEP 1] Clicking the root database tab');
+      DatabaseViewSelectors.viewTab().first().click({ force: true });
       waitForReactUpdate(1000);
 
-      // Verify Grid is selected in sidebar
-      PageSelectors.itemByName('New Database', { timeout: 10000 }).within(() => {
-        cy.get('[data-selected="true"]').should('contain.text', 'Grid');
-      });
+      PageSelectors.itemByName('New Database', { timeout: 10000 })
+        .find('[data-selected="true"]')
+        .first()
+        .should('contain.text', 'New Database');
 
       // Click on Board tab
       cy.task('log', '[STEP 2] Clicking Board tab');
       DatabaseViewSelectors.viewTab().contains('Board').click({ force: true });
       waitForReactUpdate(1000);
 
-      // Verify Board is selected in sidebar
-      PageSelectors.itemByName('New Database', { timeout: 10000 }).within(() => {
-        cy.get('[data-selected="true"]').should('contain.text', 'Board');
+      PageSelectors.itemByName('New Database', { timeout: 10000 })
+        .find('[data-selected="true"]')
+        .first()
+        .should('contain.text', 'New Database');
+      PageSelectors.names().then(($names) => {
+        const sidebarNames = Array.from({ length: $names.length }, (_, index) => $names[index]?.textContent?.trim());
+
+        expect(sidebarNames).not.to.include('Board');
       });
 
-      cy.task('log', '[TEST COMPLETE] Tab selection updates sidebar');
+      cy.task('log', '[TEST COMPLETE] Tab selection keeps one sidebar page selected');
     });
   });
 
   /**
-   * Test: Breadcrumb shows active database tab view
+   * Test: Breadcrumb remains the database page while tabs switch internally
    */
-  it('breadcrumb shows active database tab view', () => {
+  it('keeps the database page in the breadcrumb while switching tabs', () => {
     const testEmail = generateRandomEmail();
 
-    cy.task('log', `[TEST] Breadcrumb reflects active tab - Email: ${testEmail}`);
+    cy.task('log', `[TEST] Breadcrumb remains on database page - Email: ${testEmail}`);
 
     const authUtils = new AuthTestUtils();
     createGridAndWait(authUtils, testEmail).then(() => {
@@ -303,15 +295,15 @@ describe('Database View Tabs', () => {
       waitForReactUpdate(1000);
       DatabaseViewSelectors.activeViewTab().should('contain.text', 'Board');
 
-      // Verify breadcrumb shows Board as the active view
+      // Board is an internal layout, so the breadcrumb remains the database page.
       BreadcrumbSelectors.navigation()
         .find('[data-testid^="breadcrumb-item-"]')
         .should('have.length.at.least', 1)
         .last()
-        .should('contain.text', 'Board')
-        .and('not.contain.text', 'Grid');
+        .should('contain.text', 'New Database')
+        .and('not.contain.text', 'Board');
 
-      cy.task('log', '[TEST COMPLETE] Breadcrumb shows active tab view');
+      cy.task('log', '[TEST COMPLETE] Breadcrumb remains the database page');
     });
   });
 });

@@ -4,6 +4,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { useDatabase, useDatabaseViewsSelector } from '@/application/database-yjs';
 import { FilterType } from '@/application/database-yjs/database.type';
 import { DatabaseViewLayout, YjsDatabaseKey } from '@/application/types';
+import { type ReorderResult } from '@/components/_shared/reorder/useReorderMonitor';
 import { Board } from '@/components/database/board';
 import { DatabaseConditionsContext } from '@/components/database/components/conditions/context';
 import { DatabaseTabs } from '@/components/database/components/tabs';
@@ -11,6 +12,12 @@ import UnsupportedView from '@/components/database/components/UnsupportedView';
 import { Calendar } from '@/components/database/fullcalendar';
 import { Grid } from '@/components/database/grid';
 import { ElementFallbackRender } from '@/components/error/ElementFallbackRender';
+import {
+  appendDatabaseViewId,
+  readDatabaseViewOrder,
+  reconcileDatabaseViewOrder,
+  writeDatabaseViewOrder,
+} from '@/utils/database-view-order';
 
 import DatabaseConditions from 'src/components/database/components/conditions/DatabaseConditions';
 
@@ -53,6 +60,49 @@ function DatabaseViews({
   const { childViews, viewIds } = useDatabaseViewsSelector(databasePageId, visibleViewIds);
   const database = useDatabase();
   const views = database?.get(YjsDatabaseKey.views);
+  const databaseId = database?.get(YjsDatabaseKey.id) as string | undefined;
+  const [orderedViewIds, setOrderedViewIds] = useState<string[]>([]);
+  const orderedViewIdsRef = useRef<string[]>([]);
+  const orderedDatabaseIdRef = useRef<string>();
+  const hasAuthoritativeVisibleOrder = Boolean(visibleViewIds?.length);
+
+  const fallbackViewIds = useMemo(() => {
+    if (hasAuthoritativeVisibleOrder) return viewIds;
+
+    const createdAt = (viewId: string) => {
+      const value = views?.get(viewId)?.get(YjsDatabaseKey.created_at);
+      const numericValue = Number(value);
+
+      if (Number.isFinite(numericValue)) return numericValue;
+
+      const timestampValue = Date.parse(String(value ?? ''));
+
+      return Number.isFinite(timestampValue) ? timestampValue : Number.POSITIVE_INFINITY;
+    };
+
+    return [...viewIds].sort((left, right) => createdAt(left) - createdAt(right));
+  }, [hasAuthoritativeVisibleOrder, viewIds, views]);
+
+  useEffect(() => {
+    if (viewIds.length === 0) return;
+
+    const databaseChanged = orderedDatabaseIdRef.current !== databaseId;
+    const storedViewIds = readDatabaseViewOrder(databaseId);
+    const previousViewIds = databaseChanged ? [] : orderedViewIdsRef.current;
+    const baseViewIds = hasAuthoritativeVisibleOrder
+      ? fallbackViewIds
+      : storedViewIds?.length
+      ? storedViewIds
+      : previousViewIds.length
+      ? previousViewIds
+      : fallbackViewIds;
+    const nextViewIds = reconcileDatabaseViewOrder(baseViewIds, viewIds);
+
+    orderedDatabaseIdRef.current = databaseId;
+    orderedViewIdsRef.current = nextViewIds;
+    writeDatabaseViewOrder(databaseId, nextViewIds);
+    setOrderedViewIds(nextViewIds);
+  }, [databaseId, fallbackViewIds, hasAuthoritativeVisibleOrder, viewIds]);
 
   const [layout, setLayout] = useState<DatabaseViewLayout | null>(null);
   // Track the previous valid layout to prevent flash when switching to a new view
@@ -153,6 +203,31 @@ function DatabaseViews({
     [onChangeView]
   );
 
+  const handleViewAdded = useCallback(
+    (viewId: string) => {
+      const baseViewIds = orderedViewIdsRef.current.length ? orderedViewIdsRef.current : fallbackViewIds;
+      const nextViewIds = appendDatabaseViewId(baseViewIds, viewId);
+
+      orderedViewIdsRef.current = nextViewIds;
+      setOrderedViewIds(nextViewIds);
+      writeDatabaseViewOrder(databaseId, nextViewIds);
+      onViewAdded?.(viewId);
+    },
+    [databaseId, fallbackViewIds, onViewAdded]
+  );
+
+  const handleReorderTabs = useCallback(
+    ({ nextIds }: ReorderResult) => {
+      orderedViewIdsRef.current = nextIds;
+      setOrderedViewIds(nextIds);
+      writeDatabaseViewOrder(databaseId, nextIds);
+      onViewIdsChanged?.(nextIds);
+    },
+    [databaseId, onViewIdsChanged]
+  );
+
+  const displayedViewIds = orderedViewIds.length > 0 ? orderedViewIds : fallbackViewIds;
+
   // Render the appropriate view component based on layout
   // Use previous layout as fallback to prevent flash during view transitions
   const effectiveLayout = layout ?? prevLayoutRef.current;
@@ -192,9 +267,10 @@ function DatabaseViews({
           databasePageId={databasePageId}
           selectedViewId={activeViewId}
           setSelectedViewId={handleViewChange}
-          viewIds={viewIds}
-          onViewAddedToDatabase={onViewAdded}
+          viewIds={displayedViewIds}
+          onViewAddedToDatabase={handleViewAdded}
           onViewIdsChanged={onViewIdsChanged}
+          onReorderTabs={handleReorderTabs}
         />
 
         <DatabaseConditions />

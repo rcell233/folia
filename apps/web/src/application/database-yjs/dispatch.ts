@@ -2468,6 +2468,10 @@ export function useAddDatabaseView() {
         embedded: isDocumentBlock ?? false,
       });
 
+      if (!response?.view_id) {
+        throw new Error('Cloud did not return the created database view');
+      }
+
       if (response?.database_update?.length) {
         applyYDoc(databaseDoc, new Uint8Array(response.database_update));
       }

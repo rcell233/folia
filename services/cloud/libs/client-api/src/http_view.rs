@@ -1,9 +1,9 @@
 use client_api_entity::workspace_dto::{
   AddRecentPagesParams, AppendBlockToPageParams, CreateFolderViewParams,
-  CreatePageDatabaseViewParams, CreatePageParams, CreateSpaceParams, DuplicatePageParams,
-  FavoritePageParams, MovePageParams, Page, PageCollab, PublishPageParams, Space,
-  UpdatePageExtraParams, UpdatePageIconParams, UpdatePageNameParams, UpdatePageParams,
-  UpdateSpaceParams,
+  CreatePageDatabaseViewParams, CreatePageDatabaseViewResponse, CreatePageParams,
+  CreateSpaceParams, DuplicatePageParams, FavoritePageParams, MovePageParams, Page, PageCollab,
+  PublishPageParams, Space, UpdatePageExtraParams, UpdatePageIconParams, UpdatePageNameParams,
+  UpdatePageParams, UpdateSpaceParams,
 };
 use reqwest::Method;
 use serde_json::json;
@@ -395,7 +395,7 @@ impl Client {
     workspace_id: Uuid,
     view_id: &Uuid,
     params: &CreatePageDatabaseViewParams,
-  ) -> Result<(), AppResponseError> {
+  ) -> Result<CreatePageDatabaseViewResponse, AppResponseError> {
     let url = format!(
       "{}/api/workspace/{}/page-view/{}/database-view",
       self.base_url, workspace_id, view_id
@@ -406,7 +406,7 @@ impl Client {
       .json(params)
       .send()
       .await?;
-    process_response_error(resp).await
+    process_response_data::<CreatePageDatabaseViewResponse>(resp).await
   }
 
   pub async fn duplicate_view_and_children(

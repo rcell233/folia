@@ -271,6 +271,13 @@ pub struct CreatePageDatabaseViewParams {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreatePageDatabaseViewResponse {
+  pub view_id: Uuid,
+  pub database_id: Uuid,
+  pub database_update: Vec<u8>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PageCollabData {
   pub encoded_collab: Vec<u8>,
   pub row_data: HashMap<Uuid, Vec<u8>>,

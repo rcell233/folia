@@ -89,4 +89,18 @@ rollback is not automatically safe after schema migrations; restore the matching
 database and object-storage backup when a release includes incompatible schema
 changes.
 
+### Database view tab compatibility
+
+The database-view tab fix does not add or alter PostgreSQL tables, columns, or
+indexes, so it has no SQL migration. Existing secondary layouts remain in the
+Folder collab for compatibility with rename, delete, and older clients. The new
+Cloud navigation projection stops exposing those records as nested pages; no
+offline backfill or destructive cleanup is required.
+
+Deploy Cloud before Web for this change. The new Web expects the database-view
+creation response to contain `view_id`, `database_id`, and `database_update`;
+the old Cloud returned an empty response. After Cloud is healthy, deploy Web and
+force a browser reload. Rolling back both images restores the old presentation
+without restoring PostgreSQL, Redis, MinIO, or Collab data.
+
 See [`RELEASING.md`](RELEASING.md) for version-tag and completeness rules.

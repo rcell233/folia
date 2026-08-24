@@ -239,7 +239,6 @@ export default defineConfig({
       'react-dom',
       'react-katex',
       '@appflowyinc/editor',
-      '@appflowyinc/ai-chat',
       'react-colorful',
       'i18next',
       'i18next-browser-languagedetector',

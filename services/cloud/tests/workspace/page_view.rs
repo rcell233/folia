@@ -1180,7 +1180,7 @@ async fn create_database_page_view() {
     .find(|v| v.name == "To-dos")
     .unwrap();
   let todo_list_view_id = todo_folder_view.view_id;
-  web_client
+  let created_view = web_client
     .api_client
     .create_database_view(
       workspace_id,
@@ -1192,6 +1192,30 @@ async fn create_database_page_view() {
     )
     .await
     .unwrap();
+  assert!(!created_view.database_update.is_empty());
+
+  let outline = web_client
+    .api_client
+    .get_workspace_folder(&workspace_id, Some(10), None)
+    .await
+    .unwrap();
+  let todo_outline_view = outline
+    .children
+    .iter()
+    .find(|view| view.name == "General")
+    .unwrap()
+    .children
+    .iter()
+    .find(|view| view.name == "To-dos")
+    .unwrap();
+  assert!(
+    todo_outline_view
+      .children
+      .iter()
+      .all(|view| view.view_id != created_view.view_id),
+    "secondary database layouts must not appear as navigation children"
+  );
+
   let folder = get_latest_folder(&app_client, &workspace_id).await;
   let todo_view = folder
     .get_view(&todo_list_view_id.to_string(), uid)
@@ -1210,13 +1234,14 @@ async fn create_database_page_view() {
     })
     .flatten()
     .unwrap();
+  assert_eq!(grid_view.id, created_view.view_id.to_string());
   let page_collab = web_client
     .api_client
-    .get_workspace_page_view(workspace_id, &grid_view.id.parse().unwrap())
+    .get_workspace_page_view(workspace_id, &todo_list_view_id)
     .await
     .unwrap();
   assert_eq!(page_collab.data.row_data.len(), 5);
-  assert_eq!(page_collab.view.layout, ViewLayout::Grid);
+  assert_eq!(page_collab.view.layout, todo_folder_view.layout);
 }
 
 #[tokio::test]

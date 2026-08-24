@@ -1,12 +1,19 @@
-import { memo, useMemo } from 'react';
+import { type Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
+import { memo, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { DatabaseViewLayout, View, ViewLayout, YDatabaseView, YjsDatabaseKey } from '@/application/types';
+import { useReorderableItem } from '@/components/_shared/reorder/useReorderableItem';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
+import DropColumnIndicator from '@/components/database/components/drag-and-drop/DropColumnIndicator';
 import { DatabaseViewActions } from '@/components/database/components/tabs/ViewActions';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { TabLabel, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+
+const TAB_DRAG_TYPE = 'database-view-tab';
+const TAB_DRAG_EDGES: Edge[] = ['left', 'right'];
 
 export interface DatabaseTabItemProps {
   viewId: string;
@@ -25,6 +32,7 @@ export interface DatabaseTabItemProps {
   onOpenDeleteModal: (id: string) => void;
   onOpenRenameModal: (id: string) => void;
   setTabRef: (id: string, el: HTMLElement | null) => void;
+  reorderInstanceId?: symbol;
 }
 
 export const DatabaseTabItem = memo(
@@ -40,8 +48,25 @@ export const DatabaseTabItem = memo(
     onOpenDeleteModal,
     onOpenRenameModal,
     setTabRef,
+    reorderInstanceId,
   }: DatabaseTabItemProps) => {
     const { t } = useTranslation();
+    const tabRef = useRef<HTMLElement | null>(null);
+    const { dragState, shouldSuppressClick } = useReorderableItem({
+      elementRef: tabRef,
+      id: viewId,
+      dragType: TAB_DRAG_TYPE,
+      instanceId: reorderInstanceId,
+      canDrag: Boolean(reorderInstanceId),
+      allowedEdges: TAB_DRAG_EDGES,
+    });
+    const setRefs = useCallback(
+      (element: HTMLElement | null) => {
+        tabRef.current = element;
+        setTabRef(viewId, element);
+      },
+      [setTabRef, viewId]
+    );
     const rawLayoutValue = view.get(YjsDatabaseKey.layout);
     const databaseLayout = Number(rawLayoutValue) as DatabaseViewLayout;
 
@@ -96,9 +121,17 @@ export const DatabaseTabItem = memo(
         value={viewId}
         id={`view-tab-${viewId}`}
         data-testid={`view-tab-${viewId}`}
-        className={'min-w-[80px] max-w-[200px]'}
-        ref={(el) => {
-          setTabRef(viewId, el);
+        className={cn(
+          'min-w-[80px] max-w-[200px]',
+          reorderInstanceId && 'cursor-grab active:cursor-grabbing',
+          dragState.type === 'dragging' && 'opacity-40'
+        )}
+        ref={setRefs}
+        onClickCapture={(event) => {
+          if (shouldSuppressClick()) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
         }}
       >
         <TabLabel
@@ -163,6 +196,7 @@ export const DatabaseTabItem = memo(
             )}
           </DropdownMenuContent>
         </DropdownMenu>
+        {dragState.type === 'over' ? <DropColumnIndicator edge={dragState.closestEdge} /> : null}
       </TabsTrigger>
     );
   }

@@ -6,6 +6,7 @@ import { useUpdateDatabaseView } from '@/application/database-yjs/dispatch';
 import { DatabaseViewLayout, View, ViewLayout, YDatabaseView, YjsDatabaseKey } from '@/application/types';
 import { isDatabaseContainer } from '@/application/view-utils';
 import { findView } from '@/components/_shared/outline/utils';
+import { type ReorderResult } from '@/components/_shared/reorder/useReorderMonitor';
 import RenameModal from '@/components/app/view-actions/RenameModal';
 import { DatabaseActions } from '@/components/database/components/conditions';
 import { DatabaseViewTabs } from '@/components/database/components/tabs/DatabaseViewTabs';
@@ -32,11 +33,21 @@ export interface DatabaseTabBarProps {
    * Used to update the block data in embedded database blocks.
    */
   onViewIdsChanged?: (viewIds: string[]) => void;
+  onReorderTabs?: (result: ReorderResult) => void;
 }
 
 export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
   (
-    { viewIds, databasePageId, selectedViewId, setSelectedViewId, viewName: _viewName, onViewAddedToDatabase, onViewIdsChanged },
+    {
+      viewIds,
+      databasePageId,
+      selectedViewId,
+      setSelectedViewId,
+      viewName: _viewName,
+      onViewAddedToDatabase,
+      onViewIdsChanged,
+      onReorderTabs,
+    },
     ref
   ) => {
     const views = useDatabase()?.get(YjsDatabaseKey.views);
@@ -233,6 +244,7 @@ export const DatabaseTabs = forwardRef<HTMLDivElement, DatabaseTabBarProps>(
             setRenameViewId={setRenameViewId}
             pendingScrollToViewId={pendingScrollToViewId}
             setPendingScrollToViewId={setPendingScrollToViewId}
+            onReorderTabs={onReorderTabs}
             onViewAdded={(viewId) => {
               // For embedded databases, notify parent immediately
               if (onViewAddedToDatabase) {

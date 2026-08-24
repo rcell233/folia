@@ -1753,11 +1753,11 @@ async fn post_page_database_view_handler(
   state: Data<AppState>,
 
   req: HttpRequest,
-) -> Result<Json<AppResponse<()>>> {
+) -> Result<Json<AppResponse<CreatePageDatabaseViewResponse>>> {
   let uid = state.user_cache.get_user_uid(&user_uuid).await?;
   let user = realtime_user_for_web_request(req.headers(), uid)?;
   let (workspace_uuid, view_id) = path.into_inner();
-  create_database_view(
+  let response = create_database_view(
     &state,
     user,
     workspace_uuid,
@@ -1766,7 +1766,7 @@ async fn post_page_database_view_handler(
     payload.name.as_deref(),
   )
   .await?;
-  Ok(Json(AppResponse::Ok()))
+  Ok(Json(AppResponse::Ok().with_data(response)))
 }
 
 async fn update_page_view_handler(

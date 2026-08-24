@@ -66,7 +66,8 @@ use serde_json::json;
 use shared_entity::dto::chat_dto::CreateChatParams;
 use shared_entity::dto::publish_dto::{PublishDatabaseData, PublishViewInfo, PublishViewMetaData};
 use shared_entity::dto::workspace_dto::{
-  FolderView, Page, PageCollab, PageCollabData, Space, SpacePermission, ViewIcon, ViewLayout,
+  CreatePageDatabaseViewResponse, FolderView, Page, PageCollab, PageCollabData, Space,
+  SpacePermission, ViewIcon, ViewLayout,
 };
 use sqlx::PgPool;
 use std::collections::{HashMap, HashSet};
@@ -2159,7 +2160,7 @@ pub async fn create_database_view(
   database_view_id: &Uuid,
   view_layout: &ViewLayout,
   name: Option<&str>,
-) -> Result<(), AppError> {
+) -> Result<CreatePageDatabaseViewResponse, AppError> {
   let database_layout = match view_layout {
     ViewLayout::Grid => DatabaseLayout::Grid,
     ViewLayout::Board => DatabaseLayout::Board,
@@ -2275,6 +2276,12 @@ pub async fn create_database_view(
   )
   .await?;
 
+  let response = CreatePageDatabaseViewResponse {
+    view_id: new_view_id,
+    database_id,
+    database_update: database_encoded_update.clone(),
+  };
+
   update_database_data(
     &state.metrics.appflowy_web_metrics,
     &state.ws_server,
@@ -2302,7 +2309,7 @@ pub async fn create_database_view(
   )
   .await?;
 
-  Ok(())
+  Ok(response)
 }
 
 #[instrument(level = "debug", skip_all)]
