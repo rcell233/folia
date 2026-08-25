@@ -10,8 +10,12 @@ import { getOutlineExpands, setOutlineExpands } from '@/components/_shared/outli
 import DirectoryStructure from '@/components/_shared/skeleton/DirectoryStructure';
 import { useAppHandlers, useAppOutline } from '@/components/app/app.hooks';
 import { Favorite } from '@/components/app/favorite';
+import {
+  SidebarDropDestination,
+  SidebarDropTargetContext,
+  useSidebarDragMonitor,
+} from '@/components/app/outline/sidebar-dnd';
 import SpaceItem from '@/components/app/outline/SpaceItem';
-import { SidebarDropDestination, useSidebarDragMonitor } from '@/components/app/outline/sidebar-dnd';
 import { ShareWithMe } from '@/components/app/share-with-me';
 import ViewActionsPopover from '@/components/app/view-actions/ViewActionsPopover';
 import { Button } from '@/components/ui/button';
@@ -138,7 +142,7 @@ export function Outline({ width }: { width: number }) {
     [movePage, toggleExpandView]
   );
 
-  useSidebarDragMonitor({ outline: outline || [], onMove });
+  const activeDropTarget = useSidebarDragMonitor({ outline: outline || [], onMove });
 
   const onClickView = useCallback(
     (viewId: string) => {
@@ -149,34 +153,36 @@ export function Outline({ width }: { width: number }) {
 
   return (
     <>
-      <div className={'folder-views flex w-full flex-1 flex-col px-[8px] pb-[10px] pt-1'}>
-        <Favorite />
-        <ShareWithMe width={width - 20} />
-        {!outline || outline.length === 0 ? (
-          <div
-            style={{
-              width: width - 20,
-            }}
-          >
-            <DirectoryStructure />
-          </div>
-        ) : (
-          outline
-            .filter((view) => !view.extra?.is_hidden_space)
-            .map((view) => (
-              <SpaceItem
-                view={view}
-                key={view.view_id}
-                width={width - 20}
-                renderExtra={renderActions}
-                expandIds={expandViewIds}
-                toggleExpand={toggleExpandView}
-                onClickView={onClickView}
-                parentId={view.parent_view_id || ''}
-              />
-            ))
-        )}
-      </div>
+      <SidebarDropTargetContext.Provider value={activeDropTarget}>
+        <div className={'folder-views flex w-full flex-1 flex-col px-[8px] pb-[10px] pt-1'}>
+          <Favorite />
+          <ShareWithMe width={width - 20} />
+          {!outline || outline.length === 0 ? (
+            <div
+              style={{
+                width: width - 20,
+              }}
+            >
+              <DirectoryStructure />
+            </div>
+          ) : (
+            outline
+              .filter((view) => !view.extra?.is_hidden_space)
+              .map((view) => (
+                <SpaceItem
+                  view={view}
+                  key={view.view_id}
+                  width={width - 20}
+                  renderExtra={renderActions}
+                  expandIds={expandViewIds}
+                  toggleExpand={toggleExpandView}
+                  onClickView={onClickView}
+                  parentId={view.parent_view_id || ''}
+                />
+              ))
+          )}
+        </div>
+      </SidebarDropTargetContext.Provider>
       {menuProps &&
         createPortal(
           <ViewActionsPopover

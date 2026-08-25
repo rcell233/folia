@@ -1,6 +1,6 @@
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 import { View } from '@/application/types';
 
@@ -19,6 +19,19 @@ interface SidebarDropData extends Record<string, unknown> {
   parentId: string;
   intent: SidebarDropIntent;
   acceptsInside: boolean;
+}
+
+interface ActiveSidebarDropTarget {
+  viewId: string;
+  intent: SidebarDropIntent;
+}
+
+export const SidebarDropTargetContext = createContext<ActiveSidebarDropTarget | null>(null);
+
+export function useSidebarDropIntent(viewId: string): SidebarDropIntent | null {
+  const activeTarget = useContext(SidebarDropTargetContext);
+
+  return activeTarget?.viewId === viewId ? activeTarget.intent : null;
 }
 
 export interface SidebarDropDestination {
@@ -87,36 +100,58 @@ export function useSidebarDragMonitor({
 }) {
   const outlineRef = useRef(outline);
   const onMoveRef = useRef(onMove);
+  const [activeDropTarget, setActiveDropTarget] = useState<ActiveSidebarDropTarget | null>(null);
 
   useEffect(() => {
     outlineRef.current = outline;
     onMoveRef.current = onMove;
   }, [onMove, outline]);
 
-  useEffect(
-    () =>
-      monitorForElements({
-        canMonitor: ({ source }) => source.data.type === SIDEBAR_PAGE_DRAG_TYPE,
-        onDrop({ source, location }) {
-          const target = location.current.dropTargets[0];
+  useEffect(() => {
+    const updateActiveDropTarget = (target: { data: Record<string | symbol, unknown> } | undefined) => {
+      if (!target || target.data.type !== SIDEBAR_PAGE_DRAG_TYPE) {
+        setActiveDropTarget(null);
+        return;
+      }
 
-          if (!target) return;
+      const { viewId, intent } = target.data as unknown as SidebarDropData;
 
-          const sourceData = source.data as SidebarDragData;
-          const targetData = target.data as unknown as SidebarDropData;
-          const destination = resolveSidebarDrop(
-            outlineRef.current,
-            sourceData.viewId,
-            targetData.viewId,
-            targetData.parentId,
-            targetData.intent
-          );
+      setActiveDropTarget((current) =>
+        current?.viewId === viewId && current.intent === intent ? current : { viewId, intent }
+      );
+    };
 
-          if (destination) onMoveRef.current(destination);
-        },
-      }),
-    []
-  );
+    return monitorForElements({
+      canMonitor: ({ source }) => source.data.type === SIDEBAR_PAGE_DRAG_TYPE,
+      onDropTargetChange({ location }) {
+        updateActiveDropTarget(location.current.dropTargets[0]);
+      },
+      onDrag({ location }) {
+        updateActiveDropTarget(location.current.dropTargets[0]);
+      },
+      onDrop({ source, location }) {
+        const target = location.current.dropTargets[0];
+
+        setActiveDropTarget(null);
+
+        if (!target) return;
+
+        const sourceData = source.data as SidebarDragData;
+        const targetData = target.data as unknown as SidebarDropData;
+        const destination = resolveSidebarDrop(
+          outlineRef.current,
+          sourceData.viewId,
+          targetData.viewId,
+          targetData.parentId,
+          targetData.intent
+        );
+
+        if (destination) onMoveRef.current(destination);
+      },
+    });
+  }, []);
+
+  return activeDropTarget;
 }
 
 export function useSidebarDragItem({
@@ -137,7 +172,6 @@ export function useSidebarDragItem({
   enabled?: boolean;
 }) {
   const [dragging, setDragging] = useState(false);
-  const [dropIntent, setDropIntent] = useState<SidebarDropIntent | null>(null);
   const suppressClickRef = useRef(false);
 
   useEffect(() => {
@@ -178,15 +212,6 @@ export function useSidebarDragItem({
             intent,
           } satisfies SidebarDropData;
         },
-        onDrag({ self }) {
-          setDropIntent((self.data as unknown as SidebarDropData).intent);
-        },
-        onDragLeave() {
-          setDropIntent(null);
-        },
-        onDrop() {
-          setDropIntent(null);
-        },
       }),
     ];
 
@@ -214,7 +239,6 @@ export function useSidebarDragItem({
 
   return {
     dragging,
-    dropIntent,
     shouldSuppressClick() {
       if (!suppressClickRef.current) return false;
       suppressClickRef.current = false;

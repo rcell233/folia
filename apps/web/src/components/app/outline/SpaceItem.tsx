@@ -4,8 +4,8 @@ import React, { useMemo, useRef } from 'react';
 import { View } from '@/application/types';
 import { ReactComponent as PrivateIcon } from '@/assets/icons/lock.svg';
 import SpaceIcon from '@/components/_shared/view-icon/SpaceIcon';
+import { useSidebarDragItem, useSidebarDropIntent } from '@/components/app/outline/sidebar-dnd';
 import ViewItem from '@/components/app/outline/ViewItem';
-import { useSidebarDragItem } from '@/components/app/outline/sidebar-dnd';
 
 function SpaceItem({
   view,
@@ -30,7 +30,8 @@ function SpaceItem({
   const isExpanded = expandIds.includes(view.view_id);
   const isPrivate = view.is_private;
   const rowRef = useRef<HTMLDivElement>(null);
-  const { dropIntent } = useSidebarDragItem({
+
+  useSidebarDragItem({
     elementRef: rowRef,
     viewId: view.view_id,
     parentId: parentId || '',
@@ -38,6 +39,7 @@ function SpaceItem({
     insideOnly: true,
     enabled: parentId !== undefined,
   });
+  const dropIntent = useSidebarDropIntent(view.view_id);
   const renderItem = useMemo(() => {
     if (!view) return null;
     const extra = view?.extra;

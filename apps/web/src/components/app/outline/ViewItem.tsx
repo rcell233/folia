@@ -13,7 +13,7 @@ import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
 import OutlineIcon from '@/components/_shared/outline/OutlineIcon';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
 import { useAppHandlers, useSidebarSelectedViewId } from '@/components/app/app.hooks';
-import { useSidebarDragItem } from '@/components/app/outline/sidebar-dnd';
+import { useSidebarDragItem, useSidebarDropIntent } from '@/components/app/outline/sidebar-dnd';
 
 function ViewItem({
   view,
@@ -47,13 +47,14 @@ function ViewItem({
   const isExpanded = expandIds.includes(viewId);
   const [hovered, setHovered] = React.useState<boolean>(false);
   const rowRef = useRef<HTMLDivElement>(null);
-  const { dragging, dropIntent, shouldSuppressClick } = useSidebarDragItem({
+  const { dragging, shouldSuppressClick } = useSidebarDragItem({
     elementRef: rowRef,
     viewId,
     parentId: parentId || '',
     draggable: parentId !== undefined,
     enabled: parentId !== undefined,
   });
+  const dropIntent = useSidebarDropIntent(viewId);
 
   const handleChangeIcon = useCallback(
     async (icon: { ty: ViewIconType; value: string }) => {
