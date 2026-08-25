@@ -14,3 +14,8 @@ message CollabDocStateParams {
     bytes sv = 4;
     bytes doc_state = 5;
 }
+
+message CollabBatchSyncRequest {
+    repeated CollabDocStateParams items = 1;
+    PayloadCompressionType response_compression = 2;
+}

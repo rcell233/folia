@@ -56,7 +56,9 @@ use collab_database::entity::FieldType;
 use collab_document::document::Document;
 use collab_entity::CollabType;
 use collab_folder::timestamp;
-use collab_rt_entity::collab_proto::{CollabDocStateParams, PayloadCompressionType};
+use collab_rt_entity::collab_proto::{
+  CollabBatchSyncRequest, CollabDocStateParams, PayloadCompressionType,
+};
 use collab_rt_entity::realtime_proto::HttpRealtimeMessage;
 use collab_rt_entity::user::RealtimeUser;
 use collab_rt_entity::RealtimeMessage;
@@ -168,6 +170,11 @@ pub fn workspace_scope() -> Scope {
         .route(web::get().to(get_collab_handler))
         .route(web::put().to(update_collab_handler))
         .route(web::delete().to(delete_collab_handler)),
+    )
+    .service(
+      web::resource("/v1/{workspace_id}/collab/full-sync")
+        .app_data(PayloadConfig::new(100 * 1024 * 1024))
+        .route(web::post().to(collab_full_sync_batch_handler)),
     )
     .service(
       web::resource("/v1/{workspace_id}/collab/{object_id}")
@@ -2944,6 +2951,122 @@ async fn collab_full_sync_handler(
     Ok(None) => Ok(HttpResponse::InternalServerError().finish()),
     Err(err) => Ok(err.error_response()),
   }
+}
+
+#[instrument(level = "debug", skip_all, err)]
+async fn collab_full_sync_batch_handler(
+  user_uuid: UserUuid,
+  body: Bytes,
+  workspace_id: web::Path<Uuid>,
+  state: Data<AppState>,
+  server: Data<RealtimeServerAddr>,
+  req: HttpRequest,
+) -> Result<HttpResponse> {
+  const MAX_BODY_SIZE: usize = 100 * 1024 * 1024;
+  const MAX_ITEMS: usize = 1000;
+
+  if body.is_empty() {
+    return Err(AppError::InvalidRequest("body is empty".to_string()).into());
+  }
+  if body.len() > MAX_BODY_SIZE {
+    return Err(
+      AppError::InvalidRequest(format!("body size exceeds limit: {}", MAX_BODY_SIZE)).into(),
+    );
+  }
+
+  let payload = CollabBatchSyncRequest::decode(&mut Cursor::new(body)).map_err(|err| {
+    AppError::InvalidRequest(format!("Failed to parse CollabBatchSyncRequest: {}", err))
+  })?;
+
+  if payload.items.is_empty() {
+    return Err(AppError::InvalidRequest("items is empty".to_string()).into());
+  }
+  if payload.items.len() > MAX_ITEMS {
+    return Err(
+      AppError::InvalidRequest(format!("item count exceeds limit: {}", MAX_ITEMS)).into(),
+    );
+  }
+
+  let workspace_id = workspace_id.into_inner();
+  let app_version = client_version_from_headers(req.headers())
+    .map(str::to_string)
+    .unwrap_or_default();
+  let device_id = device_id_from_headers(req.headers())
+    .map(str::to_string)
+    .unwrap_or_default();
+  let uid = state
+    .user_cache
+    .get_user_uid(&user_uuid)
+    .await
+    .map_err(AppResponseError::from)?;
+  let user = RealtimeUser {
+    uid,
+    device_id,
+    connect_at: timestamp(),
+    session_id: Uuid::new_v4().to_string(),
+    app_version,
+  };
+
+  // Queue every collab update before awaiting acknowledgements. The realtime
+  // actor can start processing the whole batch immediately while the client
+  // pays for only one HTTP round trip.
+  let mut receivers = Vec::with_capacity(payload.items.len());
+  for params in payload.items {
+    if params.doc_state.is_empty() {
+      return Err(AppError::InvalidRequest("doc state is empty".to_string()).into());
+    }
+
+    let object_id = Uuid::parse_str(&params.object_id)
+      .map_err(|err| AppError::InvalidRequest(format!("invalid object id: {}", err)))?;
+    let collab_type = CollabType::from(params.collab_type);
+    let compression_type = PayloadCompressionType::try_from(params.compression).map_err(|err| {
+      AppError::InvalidRequest(format!("Failed to parse PayloadCompressionType: {}", err))
+    })?;
+    let (doc_state, sv) = match compression_type {
+      PayloadCompressionType::None => (params.doc_state, params.sv),
+      PayloadCompressionType::Zstd => tokio::task::spawn_blocking(move || {
+        Ok::<_, AppError>((
+          zstd::decode_all(&*params.doc_state).map_err(|err| {
+            AppError::InvalidRequest(format!("Failed to decompress doc_state: {}", err))
+          })?,
+          zstd::decode_all(&*params.sv)
+            .map_err(|err| AppError::InvalidRequest(format!("Failed to decompress sv: {}", err)))?,
+        ))
+      })
+      .await
+      .map_err(AppError::from)??,
+    };
+
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    server
+      .try_send(ClientHttpUpdateMessage {
+        user: user.clone(),
+        workspace_id,
+        object_id,
+        collab_type,
+        update: Bytes::from(doc_state),
+        state_vector: Some(Bytes::from(sv)),
+        return_tx: Some(tx),
+      })
+      .map_err(|err| AppError::Internal(anyhow!("Failed to send message to server: {}", err)))?;
+    receivers.push((object_id, rx));
+  }
+
+  for (object_id, rx) in receivers {
+    match rx.await.map_err(|err| {
+      AppError::Internal(anyhow!("Failed to receive message from server: {}", err))
+    })? {
+      Ok(Some(_)) => {},
+      Ok(None) => {
+        return Err(
+          AppError::Internal(anyhow!("full sync returned no result for {}", object_id)).into(),
+        );
+      },
+      Err(err) => return Ok(err.error_response()),
+    }
+  }
+
+  Ok(HttpResponse::Ok().finish())
 }
 
 async fn post_quick_note_handler(

@@ -738,14 +738,7 @@ export async function updateCollab(
   return context;
 }
 
-/**
- * Full-sync multiple collab documents using the per-object endpoint exposed by
- * the pinned Community Cloud. Newer Cloud versions provide a batch endpoint,
- * but this repository's compatibility baseline does not.
- *
- * @param workspaceId - The workspace ID
- * @param items - Array of collab items to sync, each containing objectId, collabType, stateVector, and docState
- */
+/** Full-sync multiple collab documents in one HTTP request. */
 export async function collabFullSyncBatch(
   workspaceId: string,
   items: Array<{
@@ -764,28 +757,28 @@ export async function collabFullSyncBatch(
     localStorage.setItem('x-device-id', deviceId);
   }
 
-  for (const item of items) {
-    const url = `/api/workspace/v1/${workspaceId}/collab/${item.objectId}/full-sync`;
-    const request = collab.CollabDocStateParams.create({
+  const request = collab.CollabBatchSyncRequest.create({
+    items: items.map((item) => collab.CollabDocStateParams.create({
       objectId: item.objectId,
       collabType: item.collabType,
       compression: collab.PayloadCompressionType.COMPRESSION_NONE,
       sv: item.stateVector,
       docState: item.docState,
-    });
-    const encoded = collab.CollabDocStateParams.encode(request).finish();
-    const response = await axiosInstance?.post(url, encoded, {
-      headers: {
-        'Content-Type': 'application/octet-stream',
-        'client-version': 'web',
-        'device-id': deviceId,
-      },
-      responseType: 'arraybuffer',
-    });
+    })),
+    responseCompression: collab.PayloadCompressionType.COMPRESSION_NONE,
+  });
+  const encoded = collab.CollabBatchSyncRequest.encode(request).finish();
+  const response = await axiosInstance?.post(`/api/workspace/v1/${workspaceId}/collab/full-sync`, encoded, {
+    headers: {
+      'Content-Type': 'application/octet-stream',
+      'client-version': 'web',
+      'device-id': deviceId,
+    },
+    responseType: 'arraybuffer',
+  });
 
-    if (!response || response.status !== 200) {
-      throw new Error(`Failed to sync collab ${item.objectId}: ${response?.status}`);
-    }
+  if (!response || response.status !== 200) {
+    throw new Error(`Failed to batch sync collabs: ${response?.status}`);
   }
 }
 

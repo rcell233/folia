@@ -13,6 +13,14 @@ pub struct CollabDocStateParams {
   #[prost(bytes = "vec", tag = "5")]
   pub doc_state: ::prost::alloc::vec::Vec<u8>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CollabBatchSyncRequest {
+  #[prost(message, repeated, tag = "1")]
+  pub items: ::prost::alloc::vec::Vec<CollabDocStateParams>,
+  #[prost(enumeration = "PayloadCompressionType", tag = "2")]
+  pub response_compression: i32,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum PayloadCompressionType {
