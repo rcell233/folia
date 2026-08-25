@@ -1,4 +1,3 @@
-import isEqual from 'lodash-es/isEqual';
 import { Editor, Element } from 'slate';
 import { YEvent, YMapEvent, YTextEvent } from 'yjs';
 
@@ -19,6 +18,34 @@ interface YBlockChange {
   oldValue: unknown;
 }
 
+function getBlockStructuralOrder(editor: YjsEditor, blockId: string) {
+  const pageId = getPageId(editor.sharedRoot);
+  let current = getBlock(blockId, editor.sharedRoot);
+  let depth = 0;
+  let siblingIndex = -1;
+  let parentId = current?.get(YjsEditorKey.block_parent) as string | undefined;
+  const visited = new Set<string>([blockId]);
+
+  if (current && parentId) {
+    const parent = getBlock(parentId, editor.sharedRoot);
+
+    if (parent) {
+      siblingIndex = getChildrenArray(parent.get(YjsEditorKey.block_children), editor.sharedRoot)
+        .toArray()
+        .findIndex((child) => child === blockId);
+    }
+  }
+
+  while (current && parentId && parentId !== pageId && !visited.has(parentId)) {
+    visited.add(parentId);
+    depth += 1;
+    current = getBlock(parentId, editor.sharedRoot);
+    parentId = current?.get(YjsEditorKey.block_parent) as string | undefined;
+  }
+
+  return { depth, siblingIndex };
+}
+
 /**
  * Translates Yjs events to Slate editor operations
  * This function processes different types of Yjs events and applies corresponding changes to the Slate editor
@@ -27,35 +54,62 @@ interface YBlockChange {
  * @param events - Array of Yjs events to process
  */
 export function translateYEvents(editor: YjsEditor, events: Array<YEvent>) {
+  // YEvent.path is derived from the live Yjs tree. Snapshot it before applying
+  // any Slate operation so later events cannot be misclassified if callbacks
+  // cause the observed structure to change during translation.
+  const eventEntries = events.map((event) => ({ event, path: [...event.path] }));
+
   Log.debug('=== Translating Yjs events to Slate operations ===', {
     eventCount: events.length,
-    eventTypes: events.map((e) => e.path.join('.')),
+    eventTypes: eventEntries.map(({ path }) => path.join('.')),
     timestamp: new Date().toISOString(),
   });
 
-  events.forEach((event, index) => {
+  const addedBlockIds = new Set<string>();
+
+  eventEntries.forEach(({ event, path }) => {
+    if (path.length !== 2 || path[0] !== YjsEditorKey.document || path[1] !== YjsEditorKey.blocks) return;
+
+    const blockEvent = event as BlockMapEvent;
+
+    blockEvent.keysChanged?.forEach((key: string) => {
+      if (blockEvent.changes.keys.get(key)?.action === 'add') addedBlockIds.add(key);
+    });
+  });
+
+  eventEntries.forEach(({ event, path }, index) => {
     Log.debug(`Processing event ${index + 1}/${events.length}:`, {
-      path: event.path,
+      path,
       type: event.constructor.name,
     });
 
     // Handle block-level changes (document.blocks)
-    if (isEqual(event.path, ['document', 'blocks'])) {
+    if (path.length === 2 && path[0] === YjsEditorKey.document && path[1] === YjsEditorKey.blocks) {
       Log.debug('→ Applying block map changes');
       applyBlocksYEvent(editor, event as BlockMapEvent);
     }
 
     // Handle individual block updates (document.blocks[blockId])
-    if (isEqual(event.path, ['document', 'blocks', event.path[2]])) {
-      const blockId = event.path[2] as string;
+    if (path.length === 3 && path[0] === YjsEditorKey.document && path[1] === YjsEditorKey.blocks) {
+      const blockId = path[2] as string;
+
+      // The map-add event already materializes a new block from its final Yjs
+      // state. Attribute events emitted while constructing that same block are
+      // redundant and may refer to pre-insertion Slate properties.
+      if (addedBlockIds.has(blockId)) return;
 
       Log.debug(`→ Applying block update for blockId: ${blockId}`);
       applyUpdateBlockYEvent(editor, blockId, event as YMapEvent<unknown>);
     }
 
     // Handle text content changes (document.meta.text_map[textId])
-    if (isEqual(event.path, ['document', 'meta', 'text_map', event.path[3]])) {
-      const textId = event.path[3] as string;
+    if (
+      path.length === 4 &&
+      path[0] === YjsEditorKey.document &&
+      path[1] === YjsEditorKey.meta &&
+      path[2] === YjsEditorKey.text_map
+    ) {
+      const textId = path[3] as string;
 
       Log.debug(`→ Applying text content changes for textId: ${textId}`);
       applyTextYEvent(editor, textId, event as YTextEvent);
@@ -145,10 +199,35 @@ function applyBlocksYEvent(editor: YjsEditor, event: BlockMapEvent) {
     updates.push({ key, action: value.action, value: value as YBlockChange });
   });
 
-  // Sort updates: delete first, then add/update
+  const structuralOrders = new Map(
+    updates
+      .filter(({ action }) => action === 'add')
+      .map(({ key }) => [key, getBlockStructuralOrder(editor, key)]),
+  );
+
+  // Y.Map event order is not document order. Apply deletions first, then add
+  // parents before descendants and siblings from left to right. This keeps
+  // every insert_node path valid while retaining Slate's native selection
+  // transforms and onChange notifications.
+  const actionOrder = { delete: 0, add: 1, update: 2 };
+
   updates.sort((a, b) => {
-    if (a.action === 'delete' && b.action !== 'delete') return -1;
-    if (a.action !== 'delete' && b.action === 'delete') return 1;
+    const actionDifference =
+      (actionOrder[a.action as keyof typeof actionOrder] ?? 3) -
+      (actionOrder[b.action as keyof typeof actionOrder] ?? 3);
+
+    if (actionDifference !== 0) return actionDifference;
+
+    if (a.action === 'add' && b.action === 'add') {
+      const aOrder = structuralOrders.get(a.key);
+      const bOrder = structuralOrders.get(b.key);
+
+      if (!aOrder || !bOrder) return 0;
+
+      if (aOrder.depth !== bOrder.depth) return aOrder.depth - bOrder.depth;
+      return aOrder.siblingIndex - bOrder.siblingIndex;
+    }
+
     return 0;
   });
 
