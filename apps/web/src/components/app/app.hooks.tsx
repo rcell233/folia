@@ -76,7 +76,7 @@ export interface AppContextType {
   updatePageName?: (viewId: string, name: string) => Promise<void>;
   deleteTrash?: (viewId?: string) => Promise<void>;
   restorePage?: (viewId?: string) => Promise<void>;
-  movePage?: (viewId: string, parentId: string, prevViewId?: string) => Promise<void>;
+  movePage?: (viewId: string, parentId: string, prevViewId?: string | null) => Promise<void>;
   openPageModal?: (viewId: string) => void;
   openPageModalViewId?: string;
   loadViews?: (variant?: UIVariant) => Promise<View[] | undefined>;

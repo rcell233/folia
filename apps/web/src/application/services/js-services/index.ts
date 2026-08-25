@@ -671,7 +671,7 @@ export class AFClientService implements AFService {
     return APIService.restorePage(workspaceId, viewId);
   }
 
-  async movePage(workspaceId: string, viewId: string, parentId: string, prevViewId?: string) {
+  async movePage(workspaceId: string, viewId: string, parentId: string, prevViewId?: string | null) {
     return APIService.movePageTo(workspaceId, viewId, parentId, prevViewId);
   }
 

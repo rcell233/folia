@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
@@ -13,6 +13,7 @@ import { CustomIconPopover } from '@/components/_shared/cutsom-icon';
 import OutlineIcon from '@/components/_shared/outline/OutlineIcon';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
 import { useAppHandlers, useSidebarSelectedViewId } from '@/components/app/app.hooks';
+import { useSidebarDragItem } from '@/components/app/outline/sidebar-dnd';
 
 function ViewItem({
   view,
@@ -23,6 +24,7 @@ function ViewItem({
   toggleExpand,
   onClickView,
   parentView,
+  parentId,
 }: {
   view: View;
   width: number;
@@ -32,6 +34,7 @@ function ViewItem({
   toggleExpand: (id: string, isExpand: boolean) => void;
   onClickView?: (viewId: string) => void;
   parentView?: View;
+  parentId?: string;
 }) {
   const { t } = useTranslation();
   const selectedViewId = useSidebarSelectedViewId();
@@ -43,6 +46,14 @@ function ViewItem({
 
   const isExpanded = expandIds.includes(viewId);
   const [hovered, setHovered] = React.useState<boolean>(false);
+  const rowRef = useRef<HTMLDivElement>(null);
+  const { dragging, dropIntent, shouldSuppressClick } = useSidebarDragItem({
+    elementRef: rowRef,
+    viewId,
+    parentId: parentId || '',
+    draggable: parentId !== undefined,
+    enabled: parentId !== undefined,
+  });
 
   const handleChangeIcon = useCallback(
     async (icon: { ty: ViewIconType; value: string }) => {
@@ -125,6 +136,7 @@ function ViewItem({
 
     return (
       <div
+        ref={rowRef}
         data-testid={`page-${view.view_id}`}
         data-selected={selected}
         style={{
@@ -137,14 +149,15 @@ function ViewItem({
           setHovered(false);
         }}
         onClick={() => {
+          if (shouldSuppressClick()) return;
           const firstChild = getFirstChildView(view);
 
           onClickView?.(firstChild?.view_id ?? viewId);
         }}
-        className={
-          'my-[1px] flex min-h-[30px] w-full cursor-pointer select-none items-center gap-1 overflow-hidden rounded-[8px] px-0.5 py-0.5 text-sm hover:bg-fill-content-hover focus:outline-none'
-        }
+        className={`relative my-[1px] flex min-h-[30px] w-full cursor-pointer select-none items-center gap-1 overflow-hidden rounded-[8px] px-0.5 py-0.5 text-sm hover:bg-fill-content-hover focus:outline-none ${dragging ? 'opacity-40' : ''} ${dropIntent === 'inside' ? 'bg-content-blue-50' : ''}`}
       >
+        {dropIntent === 'before' && <div className='absolute inset-x-1 top-0 h-0.5 bg-content-blue-400' />}
+        {dropIntent === 'after' && <div className='absolute inset-x-1 bottom-0 h-0.5 bg-content-blue-400' />}
         {renderLeftIcon()}
 
         <CustomIconPopover
@@ -204,6 +217,9 @@ function ViewItem({
     onClickView,
     viewId,
     handleChangeIcon,
+    dragging,
+    dropIntent,
+    shouldSuppressClick,
   ]);
 
   const renderChildren = useMemo(() => {
@@ -231,11 +247,12 @@ function ViewItem({
             toggleExpand={toggleExpand}
             onClickView={onClickView}
             parentView={view}
+            parentId={viewId}
           />
         ))}
       </div>
     );
-  }, [toggleExpand, onClickView, isExpanded, expandIds, level, renderExtra, view, width]);
+  }, [toggleExpand, onClickView, isExpanded, expandIds, level, renderExtra, view, viewId, width]);
 
   return (
     <div

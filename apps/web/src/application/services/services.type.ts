@@ -186,7 +186,7 @@ export interface AppService {
   deleteTrash: (workspaceId: string, viewId?: string) => Promise<void>;
   moveToTrash: (workspaceId: string, viewId: string) => Promise<void>;
   restoreFromTrash: (workspaceId: string, viewId?: string) => Promise<void>;
-  movePage: (workspaceId: string, viewId: string, parentId: string, prevViewId?: string) => Promise<void>;
+  movePage: (workspaceId: string, viewId: string, parentId: string, prevViewId?: string | null) => Promise<void>;
   uploadFile: (
     workspaceId: string,
     viewId: string,

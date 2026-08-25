@@ -59,7 +59,7 @@ export interface BusinessInternalContextType {
   updatePage?: (viewId: string, payload: UpdatePagePayload) => Promise<void>;
   updatePageIcon?: (viewId: string, icon: { ty: ViewIconType; value: string }) => Promise<void>;
   updatePageName?: (viewId: string, name: string) => Promise<void>;
-  movePage?: (viewId: string, parentId: string, prevViewId?: string) => Promise<void>;
+  movePage?: (viewId: string, parentId: string, prevViewId?: string | null) => Promise<void>;
 
   // Trash operations
   deleteTrash?: (viewId?: string) => Promise<void>;

@@ -132,7 +132,7 @@ export function usePageOperations({
 
   // Move page
   const movePage = useCallback(
-    async (viewId: string, parentId: string, prevViewId?: string) => {
+    async (viewId: string, parentId: string, prevViewId?: string | null) => {
       if (!currentWorkspaceId || !service) {
         throw new Error('No workspace or service found');
       }
@@ -143,7 +143,7 @@ export function usePageOperations({
 
       try {
         const lastChild = findView(outline || [], parentId)?.children?.slice(-1)[0];
-        const prevId = prevViewId || lastChild?.view_id;
+        const prevId = prevViewId === undefined ? lastChild?.view_id : prevViewId;
 
         await service?.movePage(currentWorkspaceId, viewId, parentId, prevId);
         void loadOutline?.(currentWorkspaceId, false);

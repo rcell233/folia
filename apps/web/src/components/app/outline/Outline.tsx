@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
 import { View, ViewLayout } from '@/application/types';
 import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
@@ -10,6 +11,7 @@ import DirectoryStructure from '@/components/_shared/skeleton/DirectoryStructure
 import { useAppHandlers, useAppOutline } from '@/components/app/app.hooks';
 import { Favorite } from '@/components/app/favorite';
 import SpaceItem from '@/components/app/outline/SpaceItem';
+import { SidebarDropDestination, useSidebarDragMonitor } from '@/components/app/outline/sidebar-dnd';
 import { ShareWithMe } from '@/components/app/share-with-me';
 import ViewActionsPopover from '@/components/app/view-actions/ViewActionsPopover';
 import { Button } from '@/components/ui/button';
@@ -110,7 +112,22 @@ export function Outline({ width }: { width: number }) {
     [menuProps, t]
   );
 
-  const { toView } = useAppHandlers();
+  const { movePage, toView } = useAppHandlers();
+
+  const onMove = useCallback(
+    ({ movedId, parentId, prevViewId, expandParentId }: SidebarDropDestination) => {
+      if (!movePage) return;
+
+      void movePage(movedId, parentId, prevViewId)
+        .then(() => {
+          if (expandParentId) toggleExpandView(expandParentId, true);
+        })
+        .catch(() => toast.error('Failed to move page'));
+    },
+    [movePage, toggleExpandView]
+  );
+
+  useSidebarDragMonitor({ outline: outline || [], onMove });
 
   const onClickView = useCallback(
     (viewId: string) => {
@@ -144,6 +161,7 @@ export function Outline({ width }: { width: number }) {
                 expandIds={expandViewIds}
                 toggleExpand={toggleExpandView}
                 onClickView={onClickView}
+                parentId={view.parent_view_id || ''}
               />
             ))
         )}

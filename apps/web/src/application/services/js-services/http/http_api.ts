@@ -1682,7 +1682,7 @@ export async function moveToTrash(workspaceId: string, viewId: string) {
   return executeAPIVoidRequest(() => axiosInstance?.post<APIResponse>(url));
 }
 
-export async function movePageTo(workspaceId: string, viewId: string, parentViewId: string, prevViewId?: string) {
+export async function movePageTo(workspaceId: string, viewId: string, parentViewId: string, prevViewId?: string | null) {
   const url = `/api/workspace/${workspaceId}/page-view/${viewId}/move`;
 
   return executeAPIVoidRequest(() =>
