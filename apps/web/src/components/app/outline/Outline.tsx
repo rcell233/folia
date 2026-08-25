@@ -183,6 +183,16 @@ export function Outline({ width }: { width: number }) {
           )}
         </div>
       </SidebarDropTargetContext.Provider>
+      {activeDropTarget?.indicator &&
+        createPortal(
+          <div
+            aria-hidden='true'
+            className='pointer-events-none fixed z-[9999] h-0.5 bg-content-blue-400'
+            data-testid='sidebar-drop-indicator'
+            style={activeDropTarget.indicator}
+          />,
+          document.body
+        )}
       {menuProps &&
         createPortal(
           <ViewActionsPopover

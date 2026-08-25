@@ -157,8 +157,6 @@ function ViewItem({
         }}
         className={`relative my-[1px] flex min-h-[30px] w-full cursor-pointer select-none items-center gap-1 overflow-hidden rounded-[8px] px-0.5 py-0.5 text-sm hover:bg-fill-content-hover focus:outline-none ${dragging ? 'opacity-40' : ''} ${dropIntent === 'inside' ? 'bg-content-blue-50' : ''}`}
       >
-        {dropIntent === 'before' && <div className='absolute inset-x-1 top-0 h-0.5 bg-content-blue-400' />}
-        {dropIntent === 'after' && <div className='absolute inset-x-1 bottom-0 h-0.5 bg-content-blue-400' />}
         {renderLeftIcon()}
 
         <CustomIconPopover

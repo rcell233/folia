@@ -21,9 +21,14 @@ interface SidebarDropData extends Record<string, unknown> {
   acceptsInside: boolean;
 }
 
-interface ActiveSidebarDropTarget {
+export interface ActiveSidebarDropTarget {
   viewId: string;
   intent: SidebarDropIntent;
+  indicator?: {
+    top: number;
+    left: number;
+    width: number;
+  };
 }
 
 export const SidebarDropTargetContext = createContext<ActiveSidebarDropTarget | null>(null);
@@ -108,17 +113,41 @@ export function useSidebarDragMonitor({
   }, [onMove, outline]);
 
   useEffect(() => {
-    const updateActiveDropTarget = (target: { data: Record<string | symbol, unknown> } | undefined) => {
+    const updateActiveDropTarget = (
+      target: { data: Record<string | symbol, unknown>; element: Element } | undefined
+    ) => {
       if (!target || target.data.type !== SIDEBAR_PAGE_DRAG_TYPE) {
         setActiveDropTarget(null);
         return;
       }
 
       const { viewId, intent } = target.data as unknown as SidebarDropData;
+      const rect = target.element.getBoundingClientRect();
+      const indicator =
+        intent === 'inside'
+          ? undefined
+          : {
+              // Adjacent rows have a 1px vertical margin. `after` on the row
+              // above and `before` on the row below describe the same insertion
+              // point, so draw both at the centre of that shared 2px gap.
+              top: intent === 'before' ? rect.top - 1 : rect.bottom + 1,
+              left: rect.left + 4,
+              width: Math.max(0, rect.width - 8),
+            };
 
-      setActiveDropTarget((current) =>
-        current?.viewId === viewId && current.intent === intent ? current : { viewId, intent }
-      );
+      setActiveDropTarget((current) => {
+        if (
+          current?.viewId === viewId &&
+          current.intent === intent &&
+          current.indicator?.top === indicator?.top &&
+          current.indicator?.left === indicator?.left &&
+          current.indicator?.width === indicator?.width
+        ) {
+          return current;
+        }
+
+        return { viewId, intent, indicator };
+      });
     };
 
     return monitorForElements({

@@ -61,8 +61,6 @@ function SpaceItem({
         onMouseLeave={() => setHovered(false)}
         className={`relative flex min-h-[30px] w-full cursor-pointer select-none items-center gap-0.5 truncate rounded-[8px] px-1 py-0.5 text-sm hover:bg-fill-content-hover focus:bg-fill-content-hover focus:outline-none ${dropIntent === 'inside' ? 'bg-content-blue-50' : ''}`}
       >
-        {dropIntent === 'before' && <div className='absolute inset-x-1 top-0 h-0.5 bg-content-blue-400' />}
-        {dropIntent === 'after' && <div className='absolute inset-x-1 bottom-0 h-0.5 bg-content-blue-400' />}
         <SpaceIcon
           className={'icon mr-1.5 !h-5 !w-5 !min-w-5'}
           bgColor={extra?.space_icon_color}
