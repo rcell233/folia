@@ -207,28 +207,11 @@ describe('routes - static file handling', () => {
       expect(response!.headers.get('Content-Type')).toBe('image/png');
     });
 
-    it('serves known static files like /appflowy.ico', async () => {
-      const fileContent = Buffer.from('ICO data');
-      mockReadFileSync.mockReturnValue(fileContent);
-
-      const context = createContext('/appflowy.ico');
-
-      let response: Response | undefined;
-      for (const route of routes) {
-        response = await route(context);
-        if (response) break;
-      }
-
-      expect(response).toBeDefined();
-      expect(response!.status).toBe(200);
-      expect(response!.headers.get('Content-Type')).toBe('image/x-icon');
-    });
-
-    it('serves /appflowy.svg with correct MIME type', async () => {
+    it('serves branding assets', async () => {
       const fileContent = Buffer.from('<svg></svg>');
       mockReadFileSync.mockReturnValue(fileContent);
 
-      const context = createContext('/appflowy.svg');
+      const context = createContext('/branding/folia-icon.svg');
 
       let response: Response | undefined;
       for (const route of routes) {

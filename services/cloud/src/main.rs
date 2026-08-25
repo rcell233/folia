@@ -5,7 +5,7 @@ use appflowy_cloud::telemetry::init_subscriber;
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
   let level = std::env::var("RUST_LOG").unwrap_or("info".to_string());
-  println!("AppFlowy Cloud with RUST_LOG={}", level);
+  println!("Folia Cloud with RUST_LOG={}", level);
 
   // Load environment variables from .env file
   dotenvy::dotenv().ok();

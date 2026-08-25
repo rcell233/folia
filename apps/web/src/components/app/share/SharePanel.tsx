@@ -1,23 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { AccessLevel, IPeopleWithAccessType, MentionablePerson, Role, SubscriptionPlan } from '@/application/types';
+import { AccessLevel, IPeopleWithAccessType, MentionablePerson } from '@/application/types';
 import { notify } from '@/components/_shared/notify';
 import { findAncestors } from '@/components/_shared/outline/utils';
-import { useAppHandlers, useAppOutline, useCurrentWorkspaceId, useUserWorkspaceInfo } from '@/components/app/app.hooks';
+import { useAppHandlers, useAppOutline, useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import { CopyLink } from '@/components/app/share/CopyLink';
 import { GeneralAccess } from '@/components/app/share/GeneralAccess';
 import { InviteGuest } from '@/components/app/share/InviteGuest';
 import { PeopleWithAccess } from '@/components/app/share/PeopleWithAccess';
-import { UpgradeBanner } from '@/components/app/share/UpgradeBanner';
 import { useCurrentUser, useService } from '@/components/main/app.hooks';
-import { getProAccessPlanFromSubscriptions, isAppFlowyHosted } from '@/utils/subscription';
 
 function SharePanel({ viewId }: { viewId: string }) {
   const currentUser = useCurrentUser();
   const currentWorkspaceId = useCurrentWorkspaceId();
-  const userWorkspaceInfo = useUserWorkspaceInfo();
-  const selectedWorkspace = userWorkspaceInfo?.selectedWorkspace;
-  const role = selectedWorkspace?.role;
   const service = useService();
   const { loadMentionableUsers } = useAppHandlers();
   const [people, setPeople] = useState<IPeopleWithAccessType[]>([]);
@@ -29,14 +24,6 @@ function SharePanel({ viewId }: { viewId: string }) {
   const hasFullAccess = useMemo(() => {
     return people.find((p) => p.email === currentUser?.email)?.access_level === AccessLevel.FullAccess;
   }, [people, currentUser?.email]);
-
-  const isOwner = useMemo(() => {
-    return role === Role.Owner;
-  }, [role]);
-
-  const isMember = useMemo(() => {
-    return role === Role.Member;
-  }, [role]);
 
   const loadPeople = useCallback(async () => {
     if (!currentWorkspaceId || !viewId || !service || !currentUser) {
@@ -99,38 +86,6 @@ function SharePanel({ viewId }: { viewId: string }) {
     }
   }, [loadPeople, loadMentionableData]);
 
-  const { getSubscriptions } = useAppHandlers();
-
-  const [activeSubscriptionPlan, setActiveSubscriptionPaln] = useState<SubscriptionPlan | null>(null);
-
-  const loadSubscription = useCallback(async () => {
-    try {
-      const subscriptions = await getSubscriptions?.();
-
-      if (!subscriptions || subscriptions.length === 0) {
-        setActiveSubscriptionPaln(SubscriptionPlan.Free);
-
-        return;
-      }
-
-      setActiveSubscriptionPaln(getProAccessPlanFromSubscriptions(subscriptions));
-    } catch (e) {
-      setActiveSubscriptionPaln(SubscriptionPlan.Free);
-      console.error(e);
-    }
-  }, [getSubscriptions]);
-
-  useEffect(() => {
-    if (!isAppFlowyHosted()) {
-      setActiveSubscriptionPaln(SubscriptionPlan.Pro);
-      return;
-    }
-
-    if (isOwner || isMember) {
-      void loadSubscription();
-    }
-  }, [isMember, isOwner, loadSubscription]);
-
   return (
     <div className='flex flex-col items-start gap-1 self-stretch py-4'>
       <div className='flex flex-col items-start self-stretch px-2'>
@@ -143,9 +98,7 @@ function SharePanel({ viewId }: { viewId: string }) {
           mentionableError={mentionableError}
           onInviteSuccess={refreshPeople}
           hasFullAccess={hasFullAccess}
-          activeSubscriptionPlan={activeSubscriptionPlan}
         />
-        {isAppFlowyHosted() && <UpgradeBanner activeSubscriptionPlan={activeSubscriptionPlan} />}
         <PeopleWithAccess viewId={viewId} people={people} isLoading={isLoading} onPeopleChange={refreshPeople} />
         <GeneralAccess viewId={viewId} />
         <CopyLink />

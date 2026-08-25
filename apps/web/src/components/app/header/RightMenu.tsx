@@ -1,7 +1,7 @@
 import { Divider, Tooltip } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
-import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
+import { ReactComponent as Logo } from '@/assets/branding/folia-icon.svg';
 import { useAppViewId } from '@/components/app/app.hooks';
 import { openOrDownload } from '@/utils/open_schema';
 

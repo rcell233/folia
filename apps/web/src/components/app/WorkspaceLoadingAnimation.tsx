@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import logoSvg from '@/assets/icons/logo.svg';
+import logoSvg from '@/assets/branding/folia-icon.svg';
 import { useCurrentUser } from '@/components/main/app.hooks';
 
 export function WorkspaceLoadingAnimation() {

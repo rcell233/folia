@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
-import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
+import { ReactComponent as Logo } from '@/assets/branding/folia-icon.svg';
 import { LOGIN_ACTION } from '@/components/login/const';
 import { useService } from '@/components/main/app.hooks';
 import { Button } from '@/components/ui/button';

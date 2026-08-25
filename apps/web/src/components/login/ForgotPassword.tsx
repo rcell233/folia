@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
+import { ReactComponent as Logo } from '@/assets/branding/folia-icon.svg';
 import { LOGIN_ACTION } from '@/components/login/const';
 import { useService } from '@/components/main/app.hooks';
 import { Button } from '@/components/ui/button';

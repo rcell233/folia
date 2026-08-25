@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { invalidToken } from '@/application/session/token';
-import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
+import { ReactComponent as Logo } from '@/assets/branding/folia-icon.svg';
 import { AFConfigContext, useService } from '@/components/main/app.hooks';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';

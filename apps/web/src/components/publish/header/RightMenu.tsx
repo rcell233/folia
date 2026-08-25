@@ -3,7 +3,7 @@ import { useCallback, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { PublishContext, usePublishContext } from '@/application/publish';
-import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
+import { ReactComponent as Logo } from '@/assets/branding/folia-icon.svg';
 import { ReactComponent as TemplateIcon } from '@/assets/icons/template.svg';
 import MoreActions from '@/components/_shared/more-actions/MoreActions';
 import { useCurrentUser } from '@/components/main/app.hooks';

@@ -1,6 +1,6 @@
 ## About
 This contains the source code for the mail templates used by GoTrue and
-AppFlowy Cloud services.
+Folia Cloud services.
 
 ## Development
 

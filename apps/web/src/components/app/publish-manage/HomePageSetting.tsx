@@ -1,15 +1,12 @@
 import { Button, CircularProgress, IconButton, OutlinedInput, Tooltip } from '@mui/material';
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
 
 import { SubscriptionPlan, View } from '@/application/types';
 import { ReactComponent as RemoveIcon } from '@/assets/icons/close.svg';
 import { ReactComponent as SearchIcon } from '@/assets/icons/search.svg';
-import { ReactComponent as UpgradeIcon } from '@/assets/icons/upgrade.svg';
 import { Popover } from '@/components/_shared/popover';
 import PageIcon from '@/components/_shared/view-icon/PageIcon';
-import { isAppFlowyHosted } from '@/utils/subscription';
 
 interface HomePageSettingProps {
   onRemoveHomePage: () => Promise<void>;
@@ -22,7 +19,6 @@ interface HomePageSettingProps {
 }
 
 function HomePageSetting({
-  activePlan,
   onRemoveHomePage,
   onUpdateHomePage,
   homePage,
@@ -41,40 +37,9 @@ function HomePageSetting({
     return publishViews.filter((view) => view.name?.toLowerCase().includes(searchText.toLowerCase()));
   }, [publishViews, searchText]);
 
-  const [, setSearch] = useSearchParams();
-  const handleUpgrade = useCallback(async () => {
-    if (!isOwner) return;
-    setSearch((prev) => {
-      prev.set('action', 'change_plan');
-      return prev;
-    });
-  }, [setSearch, isOwner]);
-
   // Don't show homepage setting when namespace is not editable (e.g., UUID namespace)
   if (!canEdit) {
     return null;
-  }
-
-  if (activePlan && activePlan !== SubscriptionPlan.Pro) {
-    // Only show upgrade button on official hosts (self-hosted instances have Pro features enabled by default)
-    if (!isAppFlowyHosted()) {
-      return null;
-    }
-
-    return (
-      <Tooltip title={!isOwner ? t('settings.sites.namespace.pleaseAskOwnerToSetHomePage') : undefined}>
-        <Button
-          variant={'contained'}
-          color={'secondary'}
-          size={'small'}
-          onClick={handleUpgrade}
-          endIcon={<UpgradeIcon />}
-          data-testid="homepage-upgrade-button"
-        >
-          {t('subscribe.changePlan')}
-        </Button>
-      </Tooltip>
-    );
   }
 
   return (

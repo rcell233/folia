@@ -4,9 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import { ReactComponent as TrashIcon } from '@/assets/icons/delete.svg';
-import { ReactComponent as SupportIcon } from '@/assets/icons/help.svg';
 import { ReactComponent as MoreIcon } from '@/assets/icons/settings_more.svg';
-import { ReactComponent as TemplateIcon } from '@/assets/icons/template.svg';
 import { Popover } from '@/components/_shared/popover';
 
 function MobileMore({ onClose }: { onClose: () => void }) {
@@ -17,25 +15,11 @@ function MobileMore({ onClose }: { onClose: () => void }) {
   const actions = useMemo(() => {
     return [
       {
-        label: t('template.label'),
-        icon: <TemplateIcon />,
-        onClick: () => {
-          window.open('https://appflowy.com/templates', '_blank');
-        },
-      },
-      {
         label: t('trash.text'),
         icon: <TrashIcon />,
         onClick: () => {
           navigate('/app/trash');
         },
-      },
-      {
-        label: t('questionBubble.help'),
-        onClick: () => {
-          window.open('https://discord.gg/9Q2xaN37tV', '_blank');
-        },
-        icon: <SupportIcon />,
       },
     ];
   }, [navigate, t]);

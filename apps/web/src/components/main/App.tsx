@@ -14,7 +14,6 @@ const LoginPage = lazy(() => import('@/pages/LoginPage'));
 const AppRouter = lazy(() => import('@/components/app/AppRouter'));
 const AsTemplatePage = lazy(() => import('@/pages/AsTemplatePage'));
 const AcceptInvitationPage = lazy(() => import('@/pages/AcceptInvitationPage'));
-const AfterPaymentPage = lazy(() => import('@/pages/AfterPaymentPage'));
 const ImportPage = lazy(() => import('@/pages/ImportPage'));
 
 const AppMain = withAppWrapper(() => {
@@ -35,10 +34,6 @@ const AppMain = withAppWrapper(() => {
       <Route
         path="/404"
         element={<NotFound />}
-      />
-      <Route
-        path="/after-payment"
-        element={<Suspense><AfterPaymentPage /></Suspense>}
       />
       <Route
         path="/as-template"

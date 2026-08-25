@@ -1,8 +1,8 @@
 import { Divider } from '@mui/material';
 
-import { ReactComponent as AppFlowyLogo } from '@/assets/icons/appflowy.svg';
+import { ReactComponent as FoliaLogo } from '@/assets/branding/folia-logo.svg';
 
-function AppFlowyPower({ divider, width }: { divider?: boolean; width?: number }) {
+function FoliaBrand({ divider, width }: { divider?: boolean; width?: number }) {
   return (
     <div
       style={{
@@ -16,7 +16,7 @@ function AppFlowyPower({ divider, width }: { divider?: boolean; width?: number }
 
       <div
         onClick={() => {
-          window.open('https://appflowy.com', '_blank');
+          window.open('/', '_blank');
         }}
         style={{
           width,
@@ -26,10 +26,10 @@ function AppFlowyPower({ divider, width }: { divider?: boolean; width?: number }
         }
       >
         Powered by
-        <AppFlowyLogo className={'w-[88px]'} />
+        <FoliaLogo className={'w-[88px]'} />
       </div>
     </div>
   );
 }
 
-export default AppFlowyPower;
+export default FoliaBrand;

@@ -50,13 +50,13 @@ export const withPasted = (editor: ReactEditor) => {
 
     // Priority 1: HTML (if available)
     if (html && html.trim().length > 0) {
-      console.log('[AppFlowy] Handling HTML paste', html);
+      console.log('[Folia] Handling HTML paste', html);
       return handleHTMLPaste(editor, html, text);
     }
 
     // Priority 2: Plain text
     if (text && text.trim().length > 0) {
-      console.log('[AppFlowy] Handling Plain Text paste', text);
+      console.log('[Folia] Handling Plain Text paste', text);
       return handlePlainTextPaste(editor, text);
     }
 
@@ -74,7 +74,7 @@ function handleHTMLPaste(editor: ReactEditor, html: string, fallbackText?: strin
     // Parse HTML to structured blocks
     const blocks = parseHTML(html);
 
-    console.log('[AppFlowy] Parsed HTML blocks:', JSON.stringify(blocks, null, 2));
+    console.log('[Folia] Parsed HTML blocks:', JSON.stringify(blocks, null, 2));
 
     if (blocks.length === 0) {
       // If HTML parsing fails, fallback to plain text

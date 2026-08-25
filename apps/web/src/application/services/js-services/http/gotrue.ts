@@ -341,7 +341,7 @@ export async function signInOTP({
           isNewUser = result.is_new;
           console.log('[signInOTP] verifyToken completed, isNewUser:', isNewUser);
         } catch (error) {
-          console.error('[signInOTP] Failed to verify token with AppFlowy Cloud:', error);
+          console.error('[signInOTP] Failed to verify token with Folia Cloud:', error);
           emit(EventType.SESSION_INVALID);
 
           return Promise.reject({

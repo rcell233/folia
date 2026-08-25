@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { SubscriptionPlan, Workspace, WorkspaceMember } from '@/application/types';
@@ -12,7 +11,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { getProAccessPlanFromSubscriptions, isAppFlowyHosted } from '@/utils/subscription';
+import { getProAccessPlanFromSubscriptions, isHostedBillingEnabled } from '@/utils/subscription';
 
 function InviteMember({
   workspace,
@@ -29,7 +28,6 @@ function InviteMember({
   const [loading, setLoading] = useState(false);
   const service = useService();
   const currentWorkspaceId = workspace.id;
-  const [, setSearch] = useSearchParams();
 
   const currentUser = useCurrentUser();
   const [memberCount, setMemberCount] = React.useState<number>(0);
@@ -49,7 +47,7 @@ function InviteMember({
   const [activeSubscriptionPlan, setActiveSubscriptionPaln] = React.useState<SubscriptionPlan | null>(null);
 
   const loadSubscription = useCallback(async () => {
-    if (!isAppFlowyHosted()) {
+    if (!isHostedBillingEnabled()) {
       setActiveSubscriptionPaln(SubscriptionPlan.Pro);
       return;
     }
@@ -71,6 +69,7 @@ function InviteMember({
   }, [getSubscriptions]);
 
   const isExceed = useMemo(() => {
+    if (!isHostedBillingEnabled()) return false;
     if (activeSubscriptionPlan === null) return false;
     if (activeSubscriptionPlan === SubscriptionPlan.Free) {
       return memberCount >= 2;
@@ -117,13 +116,6 @@ function InviteMember({
     }
   }, [open, loadMembers, loadSubscription]);
 
-  const handleUpgrade = useCallback(async () => {
-    setSearch((prev) => {
-      prev.set('action', 'change_plan');
-      return prev;
-    });
-  }, [setSearch]);
-
   if (!isOwner) return null;
 
   return (
@@ -141,9 +133,6 @@ function InviteMember({
           >
             <TipIcon className={'h-4 w-4 text-function-warning'} />
             {t('inviteMember.inviteFailedMemberLimit')}
-            <span onClick={handleUpgrade} className={'cursor-pointer text-text-action hover:underline'}>
-              {t('inviteMember.upgrade')}
-            </span>
           </div>
           <div className='grid gap-4'>
             <div className='grid gap-3'>

@@ -1,5 +1,9 @@
 # Folia
 
+<p align="center">
+  <img src="assets/branding/folia-logo.svg" alt="Folia" width="520">
+</p>
+
 Folia is a reproducible, self-hosted collaborative workspace distribution. It
 packages a tested combination of the public AppFlowy Cloud, AppFlowy Web, and
 AppFlowy Auth sources with a small deployment layer.

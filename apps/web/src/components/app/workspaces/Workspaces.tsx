@@ -5,15 +5,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { clearRedirectTo } from '@/application/session/sign_in';
 import { invalidToken } from '@/application/session/token';
 import { Workspace } from '@/application/types';
-import { ReactComponent as UpgradeAIMaxIcon } from '@/assets/icons/ai.svg';
 import { ReactComponent as ChevronDownIcon } from '@/assets/icons/alt_arrow_down.svg';
-import { ReactComponent as TipIcon } from '@/assets/icons/help.svg';
 import { ReactComponent as AddUserIcon } from '@/assets/icons/invite_user.svg';
 import { ReactComponent as LogoutIcon } from '@/assets/icons/logout.svg';
 import { ReactComponent as AddIcon } from '@/assets/icons/plus.svg';
 import { ReactComponent as ImportIcon } from '@/assets/icons/save_as.svg';
 import { ReactComponent as SettingsIcon } from '@/assets/icons/settings.svg';
-import { ReactComponent as UpgradeIcon } from '@/assets/icons/upgrade.svg';
 import Import from '@/components/_shared/more-actions/importer/Import';
 import { notify } from '@/components/_shared/notify';
 import { useAppHandlers, useCurrentWorkspaceId, useUserWorkspaceInfo } from '@/components/app/app.hooks';
@@ -24,8 +21,6 @@ import InviteMember from '@/components/app/workspaces/InviteMember';
 import LeaveWorkspace from '@/components/app/workspaces/LeaveWorkspace';
 import LogoutConfirm from '@/components/app/workspaces/LogoutConfirm';
 import WorkspaceList from '@/components/app/workspaces/WorkspaceList';
-import UpgradeAIMax from '@/components/billing/UpgradeAIMax';
-import UpgradePlan from '@/components/billing/UpgradePlan';
 import { useCurrentUser, useService } from '@/components/main/app.hooks';
 import {
   DropdownMenu,
@@ -37,8 +32,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { openUrl } from '@/utils/url';
 
 import { AccountSettings } from './AccountSettings';
 
@@ -47,8 +40,6 @@ export function Workspaces() {
   const userWorkspaceInfo = useUserWorkspaceInfo();
   const currentWorkspaceId = useCurrentWorkspaceId();
   const currentUser = useCurrentUser();
-  const [openUpgradePlan, setOpenUpgradePlan] = useState(false);
-  const [openUpgradeAIMax, setOpenUpgradeAIMax] = useState(false);
   const [open, setOpen] = useState(false);
   const [hoveredHeader, setHoveredHeader] = useState<boolean>(false);
   const ref = useRef<HTMLDivElement | null>(null);
@@ -207,20 +198,6 @@ export function Workspaces() {
               <DropdownMenuItem onSelect={handleOpenImport}>
                 <ImportIcon />
                 <div className={'flex-1 text-left'}>{t('web.importNotion')}</div>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void openUrl('https://docs.appflowy.io/docs/guides/import-from-notion', '_blank');
-                      }}
-                      className={'ml-auto cursor-pointer text-icon-secondary'}
-                    >
-                      <TipIcon />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>{t('workspace.learnMore')}</TooltipContent>
-                </Tooltip>
               </DropdownMenuItem>
             </DropdownMenuGroup>
 
@@ -237,51 +214,9 @@ export function Workspaces() {
                 {t('button.logout')}
               </DropdownMenuItem>
             </DropdownMenuGroup>
-            {isOwner && (
-              <DropdownMenuGroup>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onSelect={() => {
-                    setOpenUpgradePlan(true);
-                    setOpen(false);
-                  }}
-                >
-                  <UpgradeIcon />
-                  {t('subscribe.changePlan')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={() => {
-                    setOpenUpgradeAIMax(true);
-                    setOpen(false);
-                  }}
-                >
-                  <UpgradeAIMaxIcon />
-                  {t('subscribe.getAIMax')}
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
-      {isOwner && (
-        <>
-          <UpgradePlan
-            onOpen={() => {
-              setOpenUpgradePlan(true);
-            }}
-            open={openUpgradePlan}
-            onClose={() => setOpenUpgradePlan(false)}
-          />
-          <UpgradeAIMax
-            onOpen={() => {
-              setOpenUpgradeAIMax(true);
-            }}
-            open={openUpgradeAIMax}
-            onClose={() => setOpenUpgradeAIMax(false)}
-          />
-        </>
-      )}
 
       <Import />
       {openCreateWorkspace && (

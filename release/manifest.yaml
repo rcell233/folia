@@ -1,4 +1,4 @@
-version: 0.1.2
+version: 1.0.0
 status: release-candidate
 platforms:
   - linux/amd64
@@ -17,11 +17,11 @@ sources:
     upstream_version: 0.8.0
 
 images:
-  cloud: ghcr.io/rcell233/folia-cloud:0.1.2
-  web: ghcr.io/rcell233/folia-web:0.1.2
-  worker: ghcr.io/rcell233/folia-worker:0.1.2
-  auth: ghcr.io/rcell233/folia-auth:0.1.2
-  url_migrator: ghcr.io/rcell233/folia-url-migrator:0.1.2
+  cloud: ghcr.io/rcell233/folia-cloud:1.0.0
+  web: ghcr.io/rcell233/folia-web:1.0.0
+  worker: ghcr.io/rcell233/folia-worker:1.0.0
+  auth: ghcr.io/rcell233/folia-auth:1.0.0
+  url_migrator: ghcr.io/rcell233/folia-url-migrator:1.0.0
 
 infrastructure:
   gateway: nginx:1.29-alpine

@@ -8,32 +8,20 @@ import {
   IPeopleWithAccessType,
   MentionablePerson,
   MentionPersonRole,
-  Role,
-  SubscriptionInterval,
-  SubscriptionPlan,
 } from '@/application/types';
 import { ReactComponent as ArrowDownIcon } from '@/assets/icons/alt_arrow_down.svg';
 import { ReactComponent as EditIcon } from '@/assets/icons/edit.svg';
 import { ReactComponent as ViewIcon } from '@/assets/icons/show.svg';
 import { notify } from '@/components/_shared/notify';
-import { useCurrentWorkspaceId, useUserWorkspaceInfo } from '@/components/app/app.hooks';
+import { useCurrentWorkspaceId } from '@/components/app/app.hooks';
 import { useService } from '@/components/main/app.hooks';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { DropdownMenuItemTick, dropdownMenuItemVariants } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { isAppFlowyHosted } from '@/utils/subscription';
 
 import { EmailTag, InviteInput } from './InviteInput';
 import { PersonSuggestionItem } from './PersonSuggestionItem';
@@ -49,7 +37,6 @@ interface InviteGuestProps {
   onInviteSuccess: () => Promise<void>;
   viewId: string;
   hasFullAccess: boolean;
-  activeSubscriptionPlan: SubscriptionPlan | null;
 }
 
 export function InviteGuest({
@@ -76,12 +63,8 @@ export function InviteGuest({
   const [selectedAccessLevel, setSelectedAccessLevel] = useState<AccessLevel>(AccessLevel.ReadOnly);
   const [accessLevelPopoverOpen, setAccessLevelPopoverOpen] = useState(false);
   const canNotInvite = !hasFullAccess;
-  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   // Combined loading state: show loading when either people or mentionable data is loading
   const isLoading = isLoadingPeople || isLoadingMentionable;
-  const [upgradeLoading, setUpgradeLoading] = useState(false);
-  const userWorkspaceInfo = useUserWorkspaceInfo();
-  const isOwner = userWorkspaceInfo?.selectedWorkspace?.role === Role.Owner;
 
   // Email suggestions based on search input
   const emailSuggestions = useMemo(() => {
@@ -384,38 +367,6 @@ export function InviteGuest({
     );
   }, [emailTags.length, accessLevelPopoverOpen, getAccessLevelText, selectedAccessLevel, t, handleAccessLevelSelect]);
 
-  const handleUpgrade = useCallback(async () => {
-    if (!service || !currentWorkspaceId) return;
-    const workspaceId = currentWorkspaceId;
-
-    if (!workspaceId) return;
-    if (!isOwner) {
-      toast.error('Please ask the workspace owner to upgrade to Pro to unlock guest editors.');
-      return;
-    }
-
-    if (!isAppFlowyHosted()) {
-      // Self-hosted instances have Pro features enabled by default
-      return;
-    }
-
-    const plan = SubscriptionPlan.Pro;
-
-    try {
-      setUpgradeLoading(true);
-      const link = await service.getSubscriptionLink(workspaceId, plan, SubscriptionInterval.Month);
-
-      window.open(link, '_blank');
-      setUpgradeModalOpen(false);
-
-      // eslint-disable-next-line
-    } catch (e: any) {
-      toast.error(e.message);
-    } finally {
-      setUpgradeLoading(false);
-    }
-  }, [currentWorkspaceId, service, isOwner]);
-
   const handleSendInvites = useCallback(async () => {
     if (!service || !currentWorkspaceId) return;
     if (emailTags.length === 0) return;
@@ -432,7 +383,7 @@ export function InviteGuest({
       // eslint-disable-next-line
     } catch (error: any) {
       if (error.code === ERROR_CODE.NOT_HAS_PERMISSION_TO_INVITE_GUEST) {
-        setUpgradeModalOpen(true);
+        notify.error(t('shareAction.onlyFullAccess'));
         return;
       }
 
@@ -612,24 +563,6 @@ export function InviteGuest({
           {t('shareAction.invite')}
         </Button>
       </div>
-
-      {/* Upgrade Confirmation Dialog */}
-      <Dialog open={upgradeModalOpen} onOpenChange={setUpgradeModalOpen}>
-        <DialogContent size='sm'>
-          <DialogHeader>
-            <DialogTitle>{t('shareAction.upgradeConfirmTitle')}</DialogTitle>
-            <DialogDescription>{t('shareAction.upgradeConfirmDescription')}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant='outline' onClick={() => setUpgradeModalOpen(false)}>
-              {t('button.cancel')}
-            </Button>
-            <Button onClick={handleUpgrade} loading={upgradeLoading}>
-              {t('shareAction.upgrade')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

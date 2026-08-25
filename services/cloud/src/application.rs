@@ -241,7 +241,7 @@ pub async fn init_state(config: &Config) -> Result<AppState, Error> {
   )
   .await?;
 
-  info!("Setup AppFlowy AI: {}", config.appflowy_ai.url());
+  info!("Setup Folia AI: {}", config.appflowy_ai.url());
   let appflowy_ai_client = AppFlowyAIClient::new(&config.appflowy_ai.url());
   // Pg listeners
   info!("Setting up Pg listeners...");

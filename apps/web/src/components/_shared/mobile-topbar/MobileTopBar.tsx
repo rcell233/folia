@@ -4,7 +4,7 @@ import React, { useCallback, useMemo } from 'react';
 import { HEADER_HEIGHT } from '@/application/constants';
 import { UIVariant } from '@/application/types';
 import { ReactComponent as MenuIcon } from '@/assets/icons/double_arrow_right.svg';
-import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
+import { ReactComponent as Logo } from '@/assets/branding/folia-icon.svg';
 import { ReactComponent as MoreIcon } from '@/assets/icons/more.svg';
 import { Breadcrumb } from '@/components/_shared/breadcrumb';
 import { withAppBreadcrumb } from '@/components/_shared/breadcrumb/withAppBreadcrumb';

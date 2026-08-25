@@ -30,10 +30,10 @@ describe('deploy/server', () => {
   const htmlTemplate = `
     <html>
       <head>
-        <title>AppFlowy</title>
+        <title>Folia</title>
         <meta name="description" content="">
         <meta property="og:image" content="">
-        <link rel="icon" href="/appflowy.ico">
+        <link rel="icon" href="/branding/folia-icon.svg">
         <link rel="canonical" href="">
       </head>
       <body><div id="root"></div></body>
@@ -101,20 +101,10 @@ describe('deploy/server', () => {
     const $ = load(html);
 
     expect(response.status).toBe(200);
-    expect($('title').text()).toBe('Login | AppFlowy');
-    expect($('meta[name="description"]').attr('content')).toBe('Login to AppFlowy');
+    expect($('title').text()).toBe('Login | Folia');
+    expect($('meta[name="description"]').attr('content')).toBe('Login to Folia');
     expect(mockBunFetch).not.toHaveBeenCalled();
     expect(mockReadFileSync).toHaveBeenCalled();
-  });
-
-  it('renders /after-payment route with payment metadata', async () => {
-    const response = await createServer(makeRequest('/after-payment'));
-    const html = await getHtml(response);
-    const $ = load(html);
-
-    expect(response.status).toBe(200);
-    expect($('title').text()).toBe('Payment Success | AppFlowy');
-    expect($('meta[name="description"]').attr('content')).toBe('Payment success on AppFlowy');
   });
 
   it('renders /app route without custom metadata', async () => {
@@ -123,7 +113,7 @@ describe('deploy/server', () => {
     const $ = load(html);
 
     expect(response.status).toBe(200);
-    expect($('title').text()).toBe('AppFlowy');
+    expect($('title').text()).toBe('Folia');
     expect(mockBunFetch).not.toHaveBeenCalled();
   });
 
@@ -234,7 +224,7 @@ describe('deploy/server', () => {
     const html = await getHtml(response);
     const $ = load(html);
 
-    expect($('title').text()).toContain('Doc | AppFlowy');
+    expect($('title').text()).toContain('Doc | Folia');
     expect(extractPublishError(html)).toBeUndefined();
     expect(mockBunFetch).toHaveBeenCalledWith(
       'https://api.example.com/api/workspace/v1/published/space/doc',
@@ -403,7 +393,7 @@ describe('deploy/server', () => {
 
     expect(response.status).toBe(200);
     expect($('title').text()).toContain('Doc');
-    expect($('meta[property="og:image"]').attr('content')).toBe('/og-image.png');
+    expect($('meta[property="og:image"]').attr('content')).toBe('/branding/folia-og.png');
   });
 
   it('captures HTTP errors as FETCH_ERROR', async () => {
@@ -528,7 +518,7 @@ describe('deploy/server', () => {
     const minimalTemplate = `
       <html>
         <head>
-          <title>AppFlowy</title>
+          <title>Folia</title>
         </head>
         <body><div id="root"></div></body>
       </html>
@@ -549,7 +539,7 @@ describe('deploy/server', () => {
     const html = await getHtml(response);
     const $ = load(html);
 
-    expect($('meta[property="og:title"]').attr('content')).toBe('Doc | AppFlowy');
+    expect($('meta[property="og:title"]').attr('content')).toBe('Doc | Folia');
     expect($('meta[property="og:description"]').length).toBe(1);
     expect($('meta[name="twitter:card"]').attr('content')).toBe('summary_large_image');
   });
@@ -570,7 +560,7 @@ describe('deploy/server', () => {
     const $ = load(html);
 
     expect(response.status).toBe(200);
-    expect($('title').text()).toBe('AppFlowy');
+    expect($('title').text()).toBe('Folia');
   });
 
   it('handles ARGB color without alpha correctly', async () => {
@@ -673,7 +663,7 @@ describe('deploy/server', () => {
     expect($('meta[property="og:url"]').attr('content')).toBe('https://appflowy.test/workspace/page');
   });
 
-  it('sets og:site_name to AppFlowy', async () => {
+  it('sets og:site_name to Folia', async () => {
     mockBunFetch.mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -686,7 +676,7 @@ describe('deploy/server', () => {
     const html = await getHtml(response);
     const $ = load(html);
 
-    expect($('meta[property="og:site_name"]').attr('content')).toBe('AppFlowy');
+    expect($('meta[property="og:site_name"]').attr('content')).toBe('Folia');
   });
 
   it('sets og:type to website', async () => {
@@ -766,7 +756,7 @@ describe('deploy/server', () => {
     const $ = load(html);
 
     expect(response.status).toBe(200);
-    expect($('title').text()).toBe('📝 My Notes | AppFlowy');
+    expect($('title').text()).toBe('📝 My Notes | Folia');
   });
 
   it('handles very long page names', async () => {
@@ -785,7 +775,7 @@ describe('deploy/server', () => {
     const $ = load(html);
 
     expect(response.status).toBe(200);
-    expect($('title').text()).toBe(`${longName} | AppFlowy`);
+    expect($('title').text()).toBe(`${longName} | Folia`);
   });
 
   // API endpoint verification

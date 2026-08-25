@@ -2,8 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { AuthProvider } from '@/application/types';
-import { ReactComponent as ArrowRight } from '@/assets/icons/arrow_right.svg';
-import { ReactComponent as Logo } from '@/assets/icons/logo.svg';
+import { ReactComponent as Logo } from '@/assets/branding/folia-icon.svg';
 import EmailLogin from '@/components/login/EmailLogin';
 import LoginProvider from '@/components/login/LoginProvider';
 import { AFConfigContext } from '@/components/main/app.hooks';
@@ -56,34 +55,9 @@ export function Login({ redirectTo }: { redirectTo: string }) {
           className={'flex w-full cursor-pointer flex-col items-center justify-center gap-5'}
         >
           <Logo className={'h-9 w-9'} />
-          <div className={'text-xl font-semibold'}>{t('welcomeTo')} AppFlowy</div>
+          <div className={'text-xl font-semibold'}>{t('welcomeTo')} Folia</div>
         </div>
         <EmailLogin redirectTo={redirectTo} />
-        <div
-          className={
-            'w-[300px] overflow-hidden whitespace-pre-wrap break-words text-center text-[12px] tracking-[0.36px] text-text-secondary'
-          }
-        >
-          <span>{t('web.signInAgreement')} </span>
-          <a
-            href={'https://appflowy.com/terms'}
-            target={'_blank'}
-            className={'text-text-secondary underline'}
-            rel='noreferrer'
-          >
-            {t('web.termOfUse')}
-          </a>{' '}
-          {t('web.and')}{' '}
-          <a
-            href={'https://appflowy.com/privacy'}
-            target={'_blank'}
-            className={'text-text-secondary underline'}
-            rel='noreferrer'
-          >
-            {t('web.privacyPolicy')}
-          </a>
-          .
-        </div>
         {hasOAuthProviders && (
           <div className={'flex w-full items-center justify-center gap-2 text-text-secondary'}>
             <Separator className={'flex-1'} />
@@ -109,25 +83,6 @@ export function Login({ redirectTo }: { redirectTo: string }) {
         </div>
       </div>
 
-      <div
-        style={{
-          marginBottom: isMobile ? 64 : '0',
-        }}
-        className={'flex w-full flex-col gap-5'}
-      >
-        <Separator className={'w-[320px] max-w-full'} />
-        <div
-          onClick={() => {
-            window.location.href = 'https://appflowy.com';
-          }}
-          className={
-            'flex w-full cursor-pointer items-center justify-center gap-2 text-xs font-medium text-text-secondary'
-          }
-        >
-          <span>{t('web.visitOurWebsite')}</span>
-          <ArrowRight className={'h-5 w-5'} />
-        </div>
-      </div>
     </div>
   );
 }

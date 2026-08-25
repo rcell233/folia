@@ -50,10 +50,6 @@ const NotFound = () => {
           </>
         }
         primaryAction={{
-          onClick: () => window.open('https://appflowy.com/download', '_self'),
-          label: t('publish.downloadApp'),
-        }}
-        secondaryAction={{
           onClick: () => window.open('/app', '_self'),
           label: t('landingPage.backToHome'),
         }}

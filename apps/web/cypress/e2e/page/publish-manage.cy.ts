@@ -94,10 +94,7 @@ describe('Publish Manage - Subscription and Namespace Tests', () => {
     });
   });
 
-  it('edit namespace button should be visible but clicking does nothing for Free plan on official host', () => {
-    // This test verifies the subscription check:
-    // - On official hosts (including localhost in dev): Free plan users see the button but clicking does nothing
-    // - The button is rendered but the onClick handler returns early
+  it('allows namespace editing without a hosted subscription', () => {
     setupPublishManagePanel(testEmail).then(() => {
       cy.wait(1000);
 
@@ -106,30 +103,21 @@ describe('Publish Manage - Subscription and Namespace Tests', () => {
         cy.get('[data-testid="edit-namespace-button"]').should('exist').as('editBtn');
         testLog.info('Edit namespace button exists');
 
-        // Click the button - on official hosts with Free plan, nothing should happen
-        // The UpdateNamespace modal should NOT open
         cy.get('@editBtn').click({ force: true });
       });
 
       // Wait a moment for any modal to potentially appear
       cy.wait(1000);
 
-      // The UpdateNamespace dialog should NOT appear because:
-      // 1. User is on Free plan
-      // 2. localhost is treated as official host (isAppFlowyHosted returns true)
-      // The modal has class 'MuiDialog-root' or similar - check it doesn't exist
+      // Folia is self-hosted only, so this action is never blocked by billing.
       cy.get('body').then(($body) => {
         // Look for any modal that might be the namespace update dialog
         const hasNamespaceModal = $body.find('[role="dialog"]').filter((_, el) => {
           return el.textContent?.includes('Update namespace') || el.textContent?.includes('Namespace');
         }).length > 0;
 
-        if (!hasNamespaceModal) {
-          testLog.info('✓ Edit namespace dialog correctly blocked (Free plan on official host)');
-        } else {
-          // If modal appeared, this might be a self-hosted environment where check is skipped
-          testLog.info('Note: Namespace dialog appeared - may be self-hosted environment');
-        }
+        expect(hasNamespaceModal).to.eq(true);
+        testLog.info('✓ Namespace editing is available in the self-hosted build');
       });
 
       // Close any open dialogs
@@ -158,14 +146,8 @@ describe('Publish Manage - Subscription and Namespace Tests', () => {
   });
 
   it('should allow namespace edit on self-hosted (non-official) environments', () => {
-    // This test simulates a self-hosted environment where subscription checks are skipped
-    // We use localStorage to override the isAppFlowyHosted() check
-
-    // Set up the override BEFORE visiting the page
+    // All Folia deployments use self-hosted feature semantics.
     cy.visit('/login', { failOnStatusCode: false });
-    cy.window().then((win) => {
-      win.localStorage.setItem('__test_force_self_hosted', 'true');
-    });
 
     cy.wait(500);
     const authUtils = new AuthTestUtils();
