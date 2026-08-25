@@ -756,16 +756,12 @@
     "rowPage": {
       "newField": "Agregar un nuevo campo",
       "fieldDragElementTooltip": "Haga clic para abrir el menú",
-      "showHiddenFields": {
-        "one": "Mostrar {{count}} campo oculto",
-        "many": "Mostrar {{count}} campos ocultos",
-        "other": "Mostrar {{count}} campos ocultos"
-      },
-      "hideHiddenFields": {
-        "one": "Ocultar {{count}} campo oculto",
-        "many": "Ocultar {{count}} campos ocultos",
-        "other": "Ocultar {{count}} campos ocultos"
-      }
+      "showHiddenFields_one": "Mostrar {{count}} campo oculto",
+      "showHiddenFields_many": "Mostrar {{count}} campos ocultos",
+      "showHiddenFields_other": "Mostrar {{count}} campos ocultos",
+      "hideHiddenFields_one": "Ocultar {{count}} campo oculto",
+      "hideHiddenFields_many": "Ocultar {{count}} campos ocultos",
+      "hideHiddenFields_other": "Ocultar {{count}} campos ocultos"
     },
     "sort": {
       "ascending": "ascendente",

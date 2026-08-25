@@ -572,16 +572,12 @@
     "rowPage": {
       "newField": "Dodaj nowe pole",
       "fieldDragElementTooltip": "Kliknij by otworzyć menu",
-      "showHiddenFields": {
-        "one": "Pokaż {} ukryte pole",
-        "many": "Pokaż {} ukryte pola",
-        "other": "Pokaż {} ukryte pola"
-      },
-      "hideHiddenFields": {
-        "one": "Ukryj {} ukryte pole",
-        "many": "Ukryj {} ukryte pola",
-        "other": "Ukryj {} ukryte pola"
-      }
+      "showHiddenFields_one": "Pokaż {} ukryte pole",
+      "showHiddenFields_many": "Pokaż {} ukryte pola",
+      "showHiddenFields_other": "Pokaż {} ukryte pola",
+      "hideHiddenFields_one": "Ukryj {} ukryte pole",
+      "hideHiddenFields_many": "Ukryj {} ukryte pola",
+      "hideHiddenFields_other": "Ukryj {} ukryte pola"
     },
     "sort": {
       "ascending": "Rosnąco",

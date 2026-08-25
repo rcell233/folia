@@ -1204,16 +1204,12 @@
     "rowPage": {
       "newField": "إضافة حقل جديد",
       "fieldDragElementTooltip": "انقر لفتح القائمة",
-      "showHiddenFields": {
-        "one": "إظهار {{count}} حقل",
-        "many": "إظهار {{count}} الحقول المخفية",
-        "other": "إظهار {{count}} الحقول المخفية"
-      },
-      "hideHiddenFields": {
-        "one": "إخفاء {{count}} الحقل المخفي",
-        "many": "إخفاء {{count}} الحقول المخفية",
-        "other": "إخفاء {{count}} الحقول المخفية"
-      }
+      "showHiddenFields_one": "إظهار {{count}} حقل",
+      "showHiddenFields_many": "إظهار {{count}} الحقول المخفية",
+      "showHiddenFields_other": "إظهار {{count}} الحقول المخفية",
+      "hideHiddenFields_one": "إخفاء {{count}} الحقل المخفي",
+      "hideHiddenFields_many": "إخفاء {{count}} الحقول المخفية",
+      "hideHiddenFields_other": "إخفاء {{count}} الحقول المخفية"
     },
     "sort": {
       "ascending": "تصاعدي",

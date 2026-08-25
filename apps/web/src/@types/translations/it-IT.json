@@ -700,16 +700,12 @@
     "rowPage": {
       "newField": "Aggiungi un nuovo campo",
       "fieldDragElementTooltip": "Fare clic per aprire il menu",
-      "showHiddenFields": {
-        "one": "Mostra {{count}} campo nascosto",
-        "many": "Mostra {{count}} campi nascosti",
-        "other": "Mostra {{count}} campi nascosti"
-      },
-      "hideHiddenFields": {
-        "one": "Nascondi {{count}} campo nascosto",
-        "many": "Nascondi {{count}} campi nascosti",
-        "other": "Nascondi {{count}} campi nascosti"
-      }
+      "showHiddenFields_one": "Mostra {{count}} campo nascosto",
+      "showHiddenFields_many": "Mostra {{count}} campi nascosti",
+      "showHiddenFields_other": "Mostra {{count}} campi nascosti",
+      "hideHiddenFields_one": "Nascondi {{count}} campo nascosto",
+      "hideHiddenFields_many": "Nascondi {{count}} campi nascosti",
+      "hideHiddenFields_other": "Nascondi {{count}} campi nascosti"
     },
     "sort": {
       "ascending": "Ascendente",

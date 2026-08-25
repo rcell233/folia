@@ -1141,16 +1141,12 @@
     "rowPage": {
       "newField": "添加新字段",
       "fieldDragElementTooltip": "点击打开菜单",
-      "showHiddenFields": {
-        "one": "显示 {{count}} 个隐藏字段",
-        "many": "显示 {{count}} 个隐藏字段",
-        "other": "显示 {{count}} 个隐藏字段"
-      },
-      "hideHiddenFields": {
-        "one": "隐藏 {{count}} 个隐藏字段",
-        "many": "隐藏 {{count}} 个隐藏字段",
-        "other": "隐藏 {{count}} 个隐藏字段"
-      }
+      "showHiddenFields_one": "显示 {{count}} 个隐藏字段",
+      "showHiddenFields_many": "显示 {{count}} 个隐藏字段",
+      "showHiddenFields_other": "显示 {{count}} 个隐藏字段",
+      "hideHiddenFields_one": "隐藏 {{count}} 个隐藏字段",
+      "hideHiddenFields_many": "隐藏 {{count}} 个隐藏字段",
+      "hideHiddenFields_other": "隐藏 {{count}} 个隐藏字段"
     },
     "sort": {
       "ascending": "升序",

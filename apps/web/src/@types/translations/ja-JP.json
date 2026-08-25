@@ -1357,16 +1357,12 @@
     "rowPage": {
       "newField": "新しいフィールドを追加",
       "fieldDragElementTooltip": "メニューを開くにはクリック",
-      "showHiddenFields": {
-        "one": "{{count}} 非表示フィールドを表示",
-        "many": "{{count}} 非表示フィールドを表示",
-        "other": "{{count}} 非表示フィールドを表示"
-      },
-      "hideHiddenFields": {
-        "one": "{{count}} 非表示フィールドを隠す",
-        "many": "{{count}} 非表示フィールドを隠す",
-        "other": "{{count}} 非表示フィールドを隠す"
-      },
+      "showHiddenFields_one": "{{count}} 非表示フィールドを表示",
+      "showHiddenFields_many": "{{count}} 非表示フィールドを表示",
+      "showHiddenFields_other": "{{count}} 非表示フィールドを表示",
+      "hideHiddenFields_one": "{{count}} 非表示フィールドを隠す",
+      "hideHiddenFields_many": "{{count}} 非表示フィールドを隠す",
+      "hideHiddenFields_other": "{{count}} 非表示フィールドを隠す",
       "openAsFullPage": "全画面で開く",
       "moreRowActions": "その他の行アクション"
     },

@@ -513,16 +513,12 @@
     "rowPage": {
       "newField": "Přidat nové pole",
       "fieldDragElementTooltip": "Kli",
-      "showHiddenFields": {
-        "one": "Zobrazit {} skryté pole",
-        "many": "Zobrazit {} skrytá pole",
-        "other": "Zobrazit {} skrytá pole"
-      },
-      "hideHiddenFields": {
-        "one": "Skrýt {} skryté pole",
-        "many": "Skrýt {} skrytá pole",
-        "other": "Skrýt {} skrytá pole"
-      }
+      "showHiddenFields_one": "Zobrazit {} skryté pole",
+      "showHiddenFields_many": "Zobrazit {} skrytá pole",
+      "showHiddenFields_other": "Zobrazit {} skrytá pole",
+      "hideHiddenFields_one": "Skrýt {} skryté pole",
+      "hideHiddenFields_many": "Skrýt {} skrytá pole",
+      "hideHiddenFields_other": "Skrýt {} skrytá pole"
     },
     "sort": {
       "ascending": "Vzestupně",

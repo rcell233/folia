@@ -1372,16 +1372,12 @@
     "rowPage": {
       "newField": "Додати нове поле",
       "fieldDragElementTooltip": "Натисніть, щоб відкрити меню",
-      "showHiddenFields": {
-        "one": "Показати {} приховане поле",
-        "many": "Показати {} приховані поля",
-        "other": "Показати {} приховані полі"
-      },
-      "hideHiddenFields": {
-        "one": "Сховати {} приховане поле",
-        "many": "Сховати {} приховані поля",
-        "other": "Сховати {} приховані поля"
-      },
+      "showHiddenFields_one": "Показати {} приховане поле",
+      "showHiddenFields_many": "Показати {} приховані поля",
+      "showHiddenFields_other": "Показати {} приховані полі",
+      "hideHiddenFields_one": "Сховати {} приховане поле",
+      "hideHiddenFields_many": "Сховати {} приховані поля",
+      "hideHiddenFields_other": "Сховати {} приховані поля",
       "openAsFullPage": "Відкрити як повну сторінку",
       "moreRowActions": "Більше дій рядків"
     },

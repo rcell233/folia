@@ -1170,16 +1170,12 @@
     "rowPage": {
       "newField": "הוספת שדה חדש",
       "fieldDragElementTooltip": "נא ללחוץ לפתיחת התפריט",
-      "showHiddenFields": {
-        "one": "הצגת שדה מוסתר",
-        "many": "הצגת {{count}} שדות מוסתרים",
-        "other": "הצגת {{count}} שדות מוסתרים"
-      },
-      "hideHiddenFields": {
-        "one": "הסתרת שדה מוסתר",
-        "many": "הסתרת {{count}} שדות מוסתרים",
-        "other": "הסתרת {{count}} שדות מוסתרים"
-      },
+      "showHiddenFields_one": "הצגת שדה מוסתר",
+      "showHiddenFields_many": "הצגת {{count}} שדות מוסתרים",
+      "showHiddenFields_other": "הצגת {{count}} שדות מוסתרים",
+      "hideHiddenFields_one": "הסתרת שדה מוסתר",
+      "hideHiddenFields_many": "הסתרת {{count}} שדות מוסתרים",
+      "hideHiddenFields_other": "הסתרת {{count}} שדות מוסתרים",
       "openAsFullPage": "Open as full page",
       "moreRowActions": "פעולות שורה נוספות"
     },

@@ -774,16 +774,12 @@
     "rowPage": {
       "newField": "新增欄位",
       "fieldDragElementTooltip": "點選以開啟選單",
-      "showHiddenFields": {
-        "one": "顯示 {{count}} 個隱藏欄位",
-        "many": "顯示 {{count}} 個隱藏欄位",
-        "other": "顯示 {{count}} 個隱藏欄位"
-      },
-      "hideHiddenFields": {
-        "one": "隱藏 {{count}} 個隱藏欄位",
-        "many": "隱藏 {{count}} 個隱藏欄位",
-        "other": "隱藏 {{count}} 個隱藏欄位"
-      },
+      "showHiddenFields_one": "顯示 {{count}} 個隱藏欄位",
+      "showHiddenFields_many": "顯示 {{count}} 個隱藏欄位",
+      "showHiddenFields_other": "顯示 {{count}} 個隱藏欄位",
+      "hideHiddenFields_one": "隱藏 {{count}} 個隱藏欄位",
+      "hideHiddenFields_many": "隱藏 {{count}} 個隱藏欄位",
+      "hideHiddenFields_other": "隱藏 {{count}} 個隱藏欄位",
       "openAsFullPage": "以整頁形式打開"
     },
     "sort": {

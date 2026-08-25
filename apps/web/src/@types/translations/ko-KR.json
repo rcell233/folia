@@ -1505,16 +1505,12 @@
     "rowPage": {
       "newField": "새 필드 추가",
       "fieldDragElementTooltip": "메뉴 열기",
-      "showHiddenFields": {
-        "one": "숨겨진 필드 {{count}}개 표시",
-        "many": "숨겨진 필드 {{count}}개 표시",
-        "other": "숨겨진 필드 {{count}}개 표시"
-      },
-      "hideHiddenFields": {
-        "one": "숨겨진 필드 {{count}}개 숨기기",
-        "many": "숨겨진 필드 {{count}}개 숨기기",
-        "other": "숨겨진 필드 {{count}}개 숨기기"
-      },
+      "showHiddenFields_one": "숨겨진 필드 {{count}}개 표시",
+      "showHiddenFields_many": "숨겨진 필드 {{count}}개 표시",
+      "showHiddenFields_other": "숨겨진 필드 {{count}}개 표시",
+      "hideHiddenFields_one": "숨겨진 필드 {{count}}개 숨기기",
+      "hideHiddenFields_many": "숨겨진 필드 {{count}}개 숨기기",
+      "hideHiddenFields_other": "숨겨진 필드 {{count}}개 숨기기",
       "openAsFullPage": "전체 페이지로 열기",
       "moreRowActions": "더 많은 행 작업"
     },

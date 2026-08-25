@@ -472,16 +472,12 @@
     "rowPage": {
       "newField": "ግልጽ ቀን",
       "fieldDragElementTooltip": "አንድ አማራጭ ያክሉ",
-      "showHiddenFields": {
-        "one": "የተደበቁ {} ፊልዶችን ያሳዩ",
-        "many": "የተደበቁ {} ፊልዶችን ያሳዩ",
-        "other": "የተደበቁ {} ፊልዶችን ያሳዩ"
-      },
-      "hideHiddenFields": {
-        "one": "የተደበቁ {} ፊልዶችን ይደብቁ",
-        "many": "የተደበቁ {} ፊልዶችን ይደብቁ",
-        "other": "የተደበቁ {} ፊልዶችን ይደብቁ"
-      }
+      "showHiddenFields_one": "የተደበቁ {} ፊልዶችን ያሳዩ",
+      "showHiddenFields_many": "የተደበቁ {} ፊልዶችን ያሳዩ",
+      "showHiddenFields_other": "የተደበቁ {} ፊልዶችን ያሳዩ",
+      "hideHiddenFields_one": "የተደበቁ {} ፊልዶችን ይደብቁ",
+      "hideHiddenFields_many": "የተደበቁ {} ፊልዶችን ይደብቁ",
+      "hideHiddenFields_other": "የተደበቁ {} ፊልዶችን ይደብቁ"
     },
     "sort": {
       "ascending": "ኧረይህ ንብረት ይሰረዛል",

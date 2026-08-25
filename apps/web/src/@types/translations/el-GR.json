@@ -656,16 +656,12 @@
     "rowPage": {
       "newField": "Add a new field",
       "fieldDragElementTooltip": "Click to open menu",
-      "showHiddenFields": {
-        "one": "Show {{count}} hidden field",
-        "many": "Show {{count}} hidden fields",
-        "other": "Show {{count}} hidden fields"
-      },
-      "hideHiddenFields": {
-        "one": "Απόκρυψη {{count}} κρυφού πεδίου",
-        "many": "Απόκρυψη {{count}} κρυφών πεδίων",
-        "other": "Απόκρυψη {{count}} κρυφών πεδίων"
-      }
+      "showHiddenFields_one": "Show {{count}} hidden field",
+      "showHiddenFields_many": "Show {{count}} hidden fields",
+      "showHiddenFields_other": "Show {{count}} hidden fields",
+      "hideHiddenFields_one": "Απόκρυψη {{count}} κρυφού πεδίου",
+      "hideHiddenFields_many": "Απόκρυψη {{count}} κρυφών πεδίων",
+      "hideHiddenFields_other": "Απόκρυψη {{count}} κρυφών πεδίων"
     },
     "sort": {
       "ascending": "Αύξουσα",

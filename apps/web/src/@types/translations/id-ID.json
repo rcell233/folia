@@ -524,16 +524,12 @@
     "rowPage": {
       "newField": "Tambah bidang baru",
       "fieldDragElementTooltip": "Klik untuk membuka menu",
-      "showHiddenFields": {
-        "one": "Tampilkan {} bidang tersembunyi",
-        "many": "Tampilkan {} bidang tersembunyi",
-        "other": "Tampilkan {} bidang tersembunyi"
-      },
-      "hideHiddenFields": {
-        "one": "Sembunyikan {} bidang tersembunyi",
-        "many": "Sembunyikan {} bidang tersembunyi",
-        "other": "Sembunyikan {} bidang tersembunyi"
-      }
+      "showHiddenFields_one": "Tampilkan {} bidang tersembunyi",
+      "showHiddenFields_many": "Tampilkan {} bidang tersembunyi",
+      "showHiddenFields_other": "Tampilkan {} bidang tersembunyi",
+      "hideHiddenFields_one": "Sembunyikan {} bidang tersembunyi",
+      "hideHiddenFields_many": "Sembunyikan {} bidang tersembunyi",
+      "hideHiddenFields_other": "Sembunyikan {} bidang tersembunyi"
     },
     "sort": {
       "ascending": "Naik",

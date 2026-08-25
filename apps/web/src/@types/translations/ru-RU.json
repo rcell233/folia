@@ -1272,16 +1272,12 @@
     "rowPage": {
       "newField": "Добавить новое поле",
       "fieldDragElementTooltip": "Нажмите, чтобы открыть меню",
-      "showHiddenFields": {
-        "one": "Показать {} скрытое поле",
-        "many": "Показать {} скрытых полей",
-        "other": "Показать {} скрытых поля"
-      },
-      "hideHiddenFields": {
-        "one": "Скрыть {} скрытое поле",
-        "many": "Скрыто {} скрытых полей",
-        "other": "Скрыто {} скрытых поля"
-      },
+      "showHiddenFields_one": "Показать {} скрытое поле",
+      "showHiddenFields_many": "Показать {} скрытых полей",
+      "showHiddenFields_other": "Показать {} скрытых поля",
+      "hideHiddenFields_one": "Скрыть {} скрытое поле",
+      "hideHiddenFields_many": "Скрыто {} скрытых полей",
+      "hideHiddenFields_other": "Скрыто {} скрытых поля",
       "openAsFullPage": "Открыть на всю страницу",
       "moreRowActions": "Доп. действия со строками"
     },

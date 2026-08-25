@@ -1548,16 +1548,12 @@
     "rowPage": {
       "newField": "Ein neues Feld hinzufügen",
       "fieldDragElementTooltip": "Klicken, um das Menü zu öffnen",
-      "showHiddenFields": {
-        "one": "Zeige {{count}} verstecktes Feld",
-        "many": "Zeige {{count}} versteckte Felder",
-        "other": "Zeige {{count}} versteckte Felder"
-      },
-      "hideHiddenFields": {
-        "one": "Blende {{count}} verstecktes Feld aus",
-        "many": "Blende {{count}} versteckte Felder aus",
-        "other": "Blende {{count}} versteckte Felder aus"
-      },
+      "showHiddenFields_one": "Zeige {{count}} verstecktes Feld",
+      "showHiddenFields_many": "Zeige {{count}} versteckte Felder",
+      "showHiddenFields_other": "Zeige {{count}} versteckte Felder",
+      "hideHiddenFields_one": "Blende {{count}} verstecktes Feld aus",
+      "hideHiddenFields_many": "Blende {{count}} versteckte Felder aus",
+      "hideHiddenFields_other": "Blende {{count}} versteckte Felder aus",
       "openAsFullPage": "Als ganze Seite öffnen",
       "moreRowActions": "Weitere Zeilenaktionen"
     },

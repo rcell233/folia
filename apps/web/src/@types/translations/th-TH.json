@@ -1493,16 +1493,12 @@
     "rowPage": {
       "newField": "เพิ่มฟิลด์ใหม่",
       "fieldDragElementTooltip": "คลิกเพื่อเปิดเมนู",
-      "showHiddenFields": {
-        "one": "แสดงฟิลด์ที่ซ่อนอยู่ {{count}} ฟิลด์",
-        "many": "แสดงฟิลด์ที่ซ่อนอยู่ {{count}} ฟิลด์",
-        "other": "แสดงฟิลด์ที่ซ่อนอยู่ {{count}} ฟิลด์"
-      },
-      "hideHiddenFields": {
-        "one": "ซ่อนฟิลด์ที่ซ่อนอยู่ {{count}} ฟิลด์",
-        "many": "ซ่อนฟิลด์ที่ซ่อนอยู่ {{count}} ฟิลด์",
-        "other": "ซ่อนฟิลด์ที่ซ่อนอยู่ {{count}} ฟิลด์"
-      },
+      "showHiddenFields_one": "แสดงฟิลด์ที่ซ่อนอยู่ {{count}} ฟิลด์",
+      "showHiddenFields_many": "แสดงฟิลด์ที่ซ่อนอยู่ {{count}} ฟิลด์",
+      "showHiddenFields_other": "แสดงฟิลด์ที่ซ่อนอยู่ {{count}} ฟิลด์",
+      "hideHiddenFields_one": "ซ่อนฟิลด์ที่ซ่อนอยู่ {{count}} ฟิลด์",
+      "hideHiddenFields_many": "ซ่อนฟิลด์ที่ซ่อนอยู่ {{count}} ฟิลด์",
+      "hideHiddenFields_other": "ซ่อนฟิลด์ที่ซ่อนอยู่ {{count}} ฟิลด์",
       "openAsFullPage": "เปิดแบบเต็มหน้า",
       "moreRowActions": "การดำเนินการแถวเพิ่มเติม"
     },

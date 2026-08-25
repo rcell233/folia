@@ -586,16 +586,12 @@
     "rowPage": {
       "newField": "Ajouter un nouveau champ",
       "fieldDragElementTooltip": "Cliquez pour ouvrir le menu",
-      "showHiddenFields": {
-        "one": "Afficher {{count}} champ masqué",
-        "many": "Afficher {{count}} champs masqués",
-        "other": "Afficher {{count}} champs masqués"
-      },
-      "hideHiddenFields": {
-        "one": "Cacher {{count}} champ caché",
-        "many": "Cacher {{count}} champs masqués",
-        "other": "Cacher {{count}} champs masqués"
-      }
+      "showHiddenFields_one": "Afficher {{count}} champ masqué",
+      "showHiddenFields_many": "Afficher {{count}} champs masqués",
+      "showHiddenFields_other": "Afficher {{count}} champs masqués",
+      "hideHiddenFields_one": "Cacher {{count}} champ caché",
+      "hideHiddenFields_many": "Cacher {{count}} champs masqués",
+      "hideHiddenFields_other": "Cacher {{count}} champs masqués"
     },
     "sort": {
       "ascending": "Ascendant",

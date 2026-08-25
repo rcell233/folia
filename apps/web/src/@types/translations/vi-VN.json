@@ -1367,16 +1367,12 @@
     "rowPage": {
       "newField": "Thêm một trường mới",
       "fieldDragElementTooltip": "Bấm để mở menu",
-      "showHiddenFields": {
-        "one": "Hiển thị {{count}} trường ẩn ",
-        "many": "Hiển thị {{count}} trường ẩn",
-        "other": "Hiển thị {{count}} trường ẩn"
-      },
-      "hideHiddenFields": {
-        "one": "Ẩn {{count}} trường ẩn",
-        "many": "Ẩn {{count}} trường ẩn",
-        "other": "Ẩn {{count}} trường ẩn"
-      },
+      "showHiddenFields_one": "Hiển thị {{count}} trường ẩn ",
+      "showHiddenFields_many": "Hiển thị {{count}} trường ẩn",
+      "showHiddenFields_other": "Hiển thị {{count}} trường ẩn",
+      "hideHiddenFields_one": "Ẩn {{count}} trường ẩn",
+      "hideHiddenFields_many": "Ẩn {{count}} trường ẩn",
+      "hideHiddenFields_other": "Ẩn {{count}} trường ẩn",
       "openAsFullPage": "Mở dưới dạng trang đầy đủ",
       "moreRowActions": "Thêm hành động hàng"
     },

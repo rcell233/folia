@@ -1334,16 +1334,12 @@
     "rowPage": {
       "newField": "Yeni bir alan ekle",
       "fieldDragElementTooltip": "Menüyü açmak için tıklayın",
-      "showHiddenFields": {
-        "one": "{{count}} gizli alanı göster",
-        "many": "{{count}} gizli alanı göster",
-        "other": "{{count}} gizli alanı göster"
-      },
-      "hideHiddenFields": {
-        "one": "{{count}} gizli alanı gizle",
-        "many": "{{count}} gizli alanı gizle",
-        "other": "{{count}} gizli alanı gizle"
-      },
+      "showHiddenFields_one": "{{count}} gizli alanı göster",
+      "showHiddenFields_many": "{{count}} gizli alanı göster",
+      "showHiddenFields_other": "{{count}} gizli alanı göster",
+      "hideHiddenFields_one": "{{count}} gizli alanı gizle",
+      "hideHiddenFields_many": "{{count}} gizli alanı gizle",
+      "hideHiddenFields_other": "{{count}} gizli alanı gizle",
       "openAsFullPage": "Tam sayfa olarak aç",
       "moreRowActions": "Daha fazla satır eylemi"
     },
