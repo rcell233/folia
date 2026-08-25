@@ -72,8 +72,15 @@ export async function signInWithPassword(params: { email: string; password: stri
 
     if (data) {
       try {
+        // Do not let Cloud request interceptors use a previous session while
+        // they verify the credentials for this login. A concurrent refresh of
+        // the old session can otherwise invalidate the newly-created session.
+        localStorage.removeItem('token');
         await verifyToken(data.access_token);
-        saveGoTrueAuth(JSON.stringify(data));
+        // Persist a canonical, freshly-issued session only after Cloud has
+        // accepted the access token. This mirrors the current AppFlowy Web
+        // login flow and ensures navigation cannot race ahead of token setup.
+        await refreshToken(data.refresh_token);
       } catch (error: unknown) {
         emit(EventType.SESSION_INVALID);
         const err = error as { message?: string; code?: number };
