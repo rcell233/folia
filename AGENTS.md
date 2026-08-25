@@ -1,5 +1,27 @@
 # Repository Agent Guidelines
 
+## Release Tag Safety
+
+- Before preparing or publishing any release, read and follow
+  `docs/RELEASING.md` completely. Treat it as the authoritative release
+  procedure.
+- Never create or push a release tag before the release-preparation commit has
+  been pushed to `main` and the required non-tag CI workflows for that exact
+  commit have completed successfully.
+- Before pushing a `vX.Y.Z` tag, update and commit every version location
+  required by `docs/RELEASING.md`, including `VERSION`,
+  `release/manifest.yaml`, all release image references, and the production
+  Compose image defaults. Verify locally that they all exactly match `X.Y.Z`.
+- Create the release tag only on the exact commit that passed the required CI
+  checks. After pushing it, monitor the release workflow through candidate
+  builds and final promotion; do not report the release as successful until the
+  complete workflow succeeds.
+- If a newly pushed tag fails before publishing release artifacts because of a
+  preparation error, remove the failed local and remote tag, fix and validate
+  the release-preparation commit on `main`, wait for CI to succeed, and only
+  then recreate the tag. Never move or overwrite a tag for a release whose
+  artifacts may already have been published; issue a new version instead.
+
 ## Web Feature Upstream Reference
 
 - The Web application in this repository starts from an older pinned AppFlowy

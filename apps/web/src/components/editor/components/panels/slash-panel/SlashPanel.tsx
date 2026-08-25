@@ -2,13 +2,14 @@ import { Button } from '@mui/material';
 import { PopoverOrigin } from '@mui/material/Popover/Popover';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Transforms } from 'slate';
+import { Editor, Transforms } from 'slate';
 import { ReactEditor, useSlateStatic } from 'slate-react';
 
 import { YjsEditor } from '@/application/slate-yjs';
 import { CustomEditor } from '@/application/slate-yjs/command';
 import { isEmbedBlockTypes } from '@/application/slate-yjs/command/const';
 import { findSlateEntryByBlockId, getBlockEntry } from '@/application/slate-yjs/utils/editor';
+import { getBlockIndex, getParent } from '@/application/slate-yjs/utils/yjs';
 import {
   AlignType,
   BlockData,
@@ -21,6 +22,7 @@ import {
   VideoBlockData,
   View,
   ViewLayout,
+  YjsEditorKey,
 } from '@/application/types';
 // import { ReactComponent as AIWriterIcon } from '@/assets/slash_menu_icon_ai_writer.svg';
 import { ReactComponent as EmojiIcon } from '@/assets/icons/add_emoji.svg';
@@ -46,6 +48,7 @@ import { ReactComponent as DocumentIcon } from '@/assets/icons/page.svg';
 import { ReactComponent as QuoteIcon } from '@/assets/icons/quote.svg';
 import { ReactComponent as RefDocumentIcon } from '@/assets/icons/ref_page.svg';
 import { ReactComponent as TextIcon } from '@/assets/icons/text.svg';
+import { ReactComponent as SimpleTableIcon } from '@/assets/icons/table.svg';
 import { ReactComponent as TodoListIcon } from '@/assets/icons/todo.svg';
 import { ReactComponent as ToggleHeading1Icon } from '@/assets/icons/toggle_h1.svg';
 import { ReactComponent as ToggleHeading2Icon } from '@/assets/icons/toggle_h2.svg';
@@ -726,6 +729,46 @@ export function SlashPanel({
         keywords: ['quote'],
         onClick: () => {
           turnInto(BlockType.QuoteBlock, {});
+        },
+      },
+      {
+        label: t('document.slashMenu.name.table'),
+        key: 'simpleTable',
+        icon: <SimpleTableIcon />,
+        keywords: ['table', 'simple table', 'rows', 'columns', 'data'],
+        onClick: () => {
+          const block = getBlockEntry(editor);
+
+          if (!block) return;
+
+          const blockId = block[0].blockId as string;
+          const isEmpty = !CustomEditor.getBlockTextContent(block[0], 2);
+          const parentBlock = getParent(blockId, editor.sharedRoot);
+
+          if (!parentBlock) return;
+
+          const parentBlockId = parentBlock.get(YjsEditorKey.block_id);
+          const blockIndex = getBlockIndex(blockId, editor.sharedRoot);
+
+          if (isEmpty) CustomEditor.deleteBlock(editor, blockId);
+
+          const tableId = CustomEditor.createSimpleTable(
+            editor,
+            parentBlockId,
+            2,
+            2,
+            isEmpty ? blockIndex : blockIndex + 1
+          );
+
+          if (!tableId) return;
+
+          requestAnimationFrame(() => {
+            const entry = findSlateEntryByBlockId(editor, tableId);
+
+            if (!entry) return;
+            Transforms.select(editor, Editor.start(editor, entry[1]));
+            ReactEditor.focus(editor);
+          });
         },
       },
       {

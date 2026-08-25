@@ -27,6 +27,23 @@ import {
 } from '@/application/slate-yjs/utils/editor';
 import { findNearestValidSelection, isValidSelection } from '@/application/slate-yjs/utils/transformSelection';
 import {
+  addColumnToTable,
+  addRowAndColumnToTable,
+  addRowToTable,
+  clearColumnContent,
+  clearRowContent,
+  createSimpleTable,
+  deleteColumn,
+  deleteRow,
+  duplicateColumn,
+  duplicateRow,
+  insertColumnAtIndex,
+  insertRowAtIndex,
+  reorderColumn,
+  reorderRow,
+  updateTableData,
+} from '@/application/slate-yjs/utils/simple-table-operations';
+import {
   dataStringTOJson,
   deepCopyBlock,
   deleteBlock,
@@ -930,5 +947,65 @@ export const CustomEditor = {
         });
       }
     });
+  },
+
+  addTableRow(editor: YjsEditor, tableBlockId: string) {
+    addRowToTable(editor, tableBlockId);
+  },
+
+  addTableColumn(editor: YjsEditor, tableBlockId: string) {
+    addColumnToTable(editor, tableBlockId);
+  },
+
+  addTableRowAndColumn(editor: YjsEditor, tableBlockId: string) {
+    addRowAndColumnToTable(editor, tableBlockId);
+  },
+
+  insertTableRow(editor: YjsEditor, tableBlockId: string, rowIndex: number) {
+    insertRowAtIndex(editor, tableBlockId, rowIndex);
+  },
+
+  insertTableColumn(editor: YjsEditor, tableBlockId: string, colIndex: number) {
+    insertColumnAtIndex(editor, tableBlockId, colIndex);
+  },
+
+  deleteTableRow(editor: YjsEditor, tableBlockId: string, rowIndex: number) {
+    deleteRow(editor, tableBlockId, rowIndex);
+  },
+
+  deleteTableColumn(editor: YjsEditor, tableBlockId: string, colIndex: number) {
+    deleteColumn(editor, tableBlockId, colIndex);
+  },
+
+  duplicateTableRow(editor: YjsEditor, tableBlockId: string, rowIndex: number) {
+    duplicateRow(editor, tableBlockId, rowIndex);
+  },
+
+  duplicateTableColumn(editor: YjsEditor, tableBlockId: string, colIndex: number) {
+    duplicateColumn(editor, tableBlockId, colIndex);
+  },
+
+  clearTableRowContent(editor: YjsEditor, tableBlockId: string, rowIndex: number) {
+    clearRowContent(editor, tableBlockId, rowIndex);
+  },
+
+  clearTableColumnContent(editor: YjsEditor, tableBlockId: string, colIndex: number) {
+    clearColumnContent(editor, tableBlockId, colIndex);
+  },
+
+  reorderTableRow(editor: YjsEditor, tableBlockId: string, fromIndex: number, toIndex: number) {
+    reorderRow(editor, tableBlockId, fromIndex, toIndex);
+  },
+
+  reorderTableColumn(editor: YjsEditor, tableBlockId: string, fromIndex: number, toIndex: number) {
+    reorderColumn(editor, tableBlockId, fromIndex, toIndex);
+  },
+
+  updateTableData(editor: YjsEditor, tableBlockId: string, updates: Record<string, unknown>) {
+    updateTableData(editor, tableBlockId, updates);
+  },
+
+  createSimpleTable(editor: YjsEditor, parentBlockId: string, rows: number, cols: number, insertIndex?: number) {
+    return createSimpleTable(editor, parentBlockId, rows, cols, insertIndex);
   },
 };

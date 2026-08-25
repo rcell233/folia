@@ -12,6 +12,7 @@ function ViewActionsPopover ({
   children,
   open,
   onOpenChange,
+  onImportClick,
 }: {
   view?: View;
   popoverType?: {
@@ -19,6 +20,7 @@ function ViewActionsPopover ({
     type: 'more' | 'add';
   },
   children: React.ReactNode;
+  onImportClick?: (view: View) => void;
 } & React.ComponentProps<typeof DropdownMenu>) {
 
   const onClose = useCallback(() => {
@@ -29,9 +31,7 @@ function ViewActionsPopover ({
     if (!popoverType || !view) return null;
 
     if (popoverType.type === 'add') {
-      return <AddPageActions
-        view={view}
-      />;
+      return <AddPageActions view={view} onImportClick={onImportClick} />;
     }
 
     if (popoverType.category === 'space') {
@@ -45,7 +45,7 @@ function ViewActionsPopover ({
         onClose={onClose}
       />;
     }
-  }, [onClose, popoverType, view]);
+  }, [onClose, onImportClick, popoverType, view]);
 
   return (
     <DropdownMenu

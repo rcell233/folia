@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -17,6 +17,8 @@ import ViewActionsPopover from '@/components/app/view-actions/ViewActionsPopover
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
+const ImportDialog = lazy(() => import('@/components/app/import/ImportDialog'));
+
 export function Outline({ width }: { width: number }) {
   const outline = useAppOutline();
 
@@ -32,6 +34,15 @@ export function Outline({ width }: { width: number }) {
       }
     | undefined
   >(undefined);
+  const [importTarget, setImportTarget] = useState<View>();
+  const handleImportClick = useCallback((view: View) => {
+    setMenuProps(undefined);
+    setImportTarget(view);
+  }, []);
+  const handleImportOpenChange = useCallback((open: boolean) => {
+    if (!open) setImportTarget(undefined);
+  }, []);
+  const importLastChildId = importTarget?.children?.[importTarget.children.length - 1]?.view_id;
   const [expandViewIds, setExpandViewIds] = React.useState<string[]>(Object.keys(getOutlineExpands()));
   const toggleExpandView = useCallback((id: string, isExpanded: boolean) => {
     setOutlineExpands(id, isExpanded);
@@ -177,6 +188,7 @@ export function Outline({ width }: { width: number }) {
                 setMenuProps(undefined);
               }
             }}
+            onImportClick={handleImportClick}
           >
             <div
               style={{
@@ -192,6 +204,16 @@ export function Outline({ width }: { width: number }) {
           </ViewActionsPopover>,
           document.body
         )}
+      {importTarget && (
+        <Suspense fallback={null}>
+          <ImportDialog
+            open={Boolean(importTarget)}
+            parentViewId={importTarget.view_id}
+            prevViewId={importLastChildId}
+            onOpenChange={handleImportOpenChange}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

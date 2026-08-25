@@ -1300,6 +1300,7 @@ export interface ViewComponentProps {
 export interface CreatePagePayload {
   layout: ViewLayout;
   name?: string;
+  prev_view_id?: string;
 }
 
 export interface CreatePageResponse {

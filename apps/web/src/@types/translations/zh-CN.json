@@ -197,12 +197,15 @@
     "duplicateView": "复制"
   },
   "importPanel": {
+    "title": "导入",
     "textAndMarkdown": "文本 和 Markdown",
     "documentFromV010": "来自 v0.1.0 的文档",
     "databaseFromV010": "来自 v0.1.0 的数据库",
     "notionZip": "Notion 导出的 Zip 文件",
     "csv": "CSV",
-    "database": "数据库"
+    "database": "数据库",
+    "success": "导入成功",
+    "failed": "导入失败"
   },
   "disclosureAction": {
     "rename": "重命名",

@@ -4,11 +4,12 @@ import { toast } from 'sonner';
 
 import { View, ViewLayout } from '@/application/types';
 import { ViewIcon } from '@/components/_shared/view-icon';
+import { ReactComponent as UploadIcon } from '@/assets/icons/upload.svg';
 import { useAppHandlers } from '@/components/app/app.hooks';
 import { DropdownMenuGroup, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-function AddPageActions({ view }: { view: View }) {
+function AddPageActions({ view, onImportClick }: { view: View; onImportClick?: (view: View) => void }) {
   const { t } = useTranslation();
   const { addPage, openPageModal, toView } = useAppHandlers();
 
@@ -104,8 +105,16 @@ function AddPageActions({ view }: { view: View }) {
         // eslint-disable-next-line @typescript-eslint/no-empty-function
         onSelect: () => {},
       },
+      {
+        label: t('moreAction.import'),
+        icon: <UploadIcon className='h-5 w-5 text-icon-primary' />,
+        testId: 'add-import-button',
+        onSelect: () => {
+          onImportClick?.(view);
+        },
+      },
     ],
-    [handleAddPage, t]
+    [handleAddPage, onImportClick, t, view]
   );
 
   return (
