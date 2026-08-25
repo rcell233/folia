@@ -1,18 +1,18 @@
-import { BasePoint, Element, Text, Transforms } from 'slate';
+import { BasePoint, Editor, Element, Range, Text, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
-import isURL from 'validator/lib/isURL';
 
 import { YjsEditor } from '@/application/slate-yjs';
-import { slateContentInsertToYData } from '@/application/slate-yjs/utils/convert';
-import { getBlockEntry, getSharedRoot } from '@/application/slate-yjs/utils/editor';
-import { assertDocExists, getBlock, getChildrenArray } from '@/application/slate-yjs/utils/yjs';
-import { BlockType, LinkPreviewBlockData, MentionType, VideoBlockData, YjsEditorKey } from '@/application/types';
+import { SOFT_BREAK_TYPES } from '@/application/slate-yjs/command/const';
+import { EditorMarkFormat } from '@/application/slate-yjs/types';
+import { getBlockEntry } from '@/application/slate-yjs/utils/editor';
+import { BlockType, MentionType, YjsEditorKey } from '@/application/types';
 import { parseHTML } from '@/components/editor/parsers/html-parser';
 import { parseMarkdown } from '@/components/editor/parsers/markdown-parser';
 import { parseTSVTable } from '@/components/editor/parsers/table-parser';
 import { ParsedBlock } from '@/components/editor/parsers/types';
+import { insertBlocksAtCaret } from '@/components/editor/utils/insert-blocks-at-caret';
 import { detectMarkdown, detectTSV } from '@/components/editor/utils/markdown-detector';
-import { processUrl } from '@/utils/url';
+import { parseAppFlowyPageLink, processUrl, workspaceIdFromAppPathname } from '@/utils/url';
 
 /**
  * Enhances Slate editor with improved paste handling
@@ -28,6 +28,23 @@ export const withPasted = (editor: ReactEditor) => {
    * Main paste handler - processes clipboard data
    */
   editor.insertTextData = (data: DataTransfer) => {
+    // Code blocks accept clipboard contents as plain text. Rich clipboard
+    // formats would otherwise be parsed into sibling blocks below the code.
+    const entry = getBlockEntry(editor as YjsEditor);
+
+    if (entry) {
+      const [node] = entry;
+
+      if (SOFT_BREAK_TYPES.includes(node.type as BlockType)) {
+        const text = data.getData('text/plain');
+
+        if (text) {
+          editor.insertText(text);
+          return true;
+        }
+      }
+    }
+
     const html = data.getData('text/html');
     const text = data.getData('text/plain');
 
@@ -85,10 +102,11 @@ function handlePlainTextPaste(editor: ReactEditor, text: string): boolean {
 
   // Special case: Single line
   if (lineLength === 1) {
-    const isUrl = !!processUrl(text);
+    const pastedText = text.trim();
+    const isUrl = !!processUrl(pastedText);
 
     if (isUrl) {
-      return handleURLPaste(editor, text);
+      return handleURLPaste(editor, pastedText);
     }
 
     // Check if it's Markdown (even for single line)
@@ -163,57 +181,64 @@ function handleMarkdownPaste(editor: ReactEditor, markdown: string): boolean {
  * Handles URL paste (link previews, videos, page references)
  */
 function handleURLPaste(editor: ReactEditor, url: string): boolean {
-  // Check for AppFlowy internal links
-  const isAppFlowyLinkUrl = isURL(url, {
-    host_whitelist: [window.location.hostname],
-  });
+  const appFlowyPageLink = parseAppFlowyPageLink(url, window.location.hostname);
+  const currentWorkspaceId = workspaceIdFromAppPathname(window.location.pathname);
 
-  if (isAppFlowyLinkUrl) {
-    const urlObj = new URL(url);
-    const blockId = urlObj.searchParams.get('blockId');
+  if (
+    appFlowyPageLink &&
+    currentWorkspaceId &&
+    appFlowyPageLink.workspaceId.toLowerCase() === currentWorkspaceId.toLowerCase()
+  ) {
+    const point = editor.selection?.anchor as BasePoint;
 
-    if (blockId) {
-      const pageId = urlObj.pathname.split('/').pop();
-      const point = editor.selection?.anchor as BasePoint;
-
-      if (point) {
-        Transforms.insertNodes(
-          editor,
-          {
-            text: '@',
-            mention: {
-              type: MentionType.PageRef,
-              page_id: pageId,
-              block_id: blockId,
-            },
+    if (point) {
+      Transforms.insertNodes(
+        editor,
+        {
+          text: '@',
+          mention: {
+            type: MentionType.PageRef,
+            page_id: appFlowyPageLink.viewId,
+            ...(appFlowyPageLink.blockId ? { block_id: appFlowyPageLink.blockId } : {}),
           },
-          { at: point, select: true, voids: false }
-        );
+        },
+        { at: point, select: true, voids: false }
+      );
 
-        return true;
-      }
+      return true;
     }
   }
 
-  // Check for video URLs
-  const isVideoUrl = isURL(url, {
-    host_whitelist: ['youtube.com', 'www.youtube.com', 'youtu.be', 'vimeo.com'],
-  });
+  return insertLinkedURLText(editor, url);
+}
 
-  if (isVideoUrl) {
-    return insertBlock(editor, {
-      type: BlockType.VideoBlock,
-      data: { url } as VideoBlockData,
-      children: [{ text: '' }],
-    });
+function insertLinkedURLText(editor: ReactEditor, url: string): boolean {
+  const href = processUrl(url) || url;
+
+  if (!editor.selection) return false;
+
+  if (Range.isExpanded(editor.selection)) {
+    Transforms.delete(editor);
   }
 
-  // Default: Link preview
-  return insertBlock(editor, {
-    type: BlockType.LinkPreview,
-    data: { url } as LinkPreviewBlockData,
-    children: [{ text: '' }],
-  });
+  const point = editor.selection?.anchor as BasePoint | undefined;
+
+  if (!point) return false;
+
+  editor.insertText(url);
+
+  const end = editor.selection ? Range.end(editor.selection) : { path: point.path, offset: point.offset + url.length };
+  const start = { path: [...end.path], offset: Math.max(0, end.offset - url.length) };
+  const insertedRange: Range = { anchor: start, focus: { path: [...end.path], offset: end.offset } };
+
+  if (Editor.hasPath(editor, start.path) && editor.string(insertedRange) === url) {
+    Transforms.select(editor, insertedRange);
+    editor.addMark(EditorMarkFormat.Href, href);
+    Transforms.select(editor, insertedRange);
+    Transforms.collapse(editor, { edge: 'end' });
+  }
+
+  return true;
 }
 
 /**
@@ -231,27 +256,6 @@ function handleMultiLinePlainText(editor: ReactEditor, lines: string[]): boolean
     }));
 
   return insertParsedBlocks(editor, blocks);
-}
-
-/**
- * Helper to insert a single block (for URL handlers)
- */
-function insertBlock(editor: ReactEditor, block: unknown): boolean {
-  const point = editor.selection?.anchor as BasePoint;
-
-  if (!point) return false;
-
-  try {
-    Transforms.insertNodes(editor, block as import('slate').Node, {
-      at: point,
-      select: true,
-    });
-
-    return true;
-  } catch (error) {
-    console.error('Error inserting block:', error);
-    return false;
-  }
 }
 
 /**
@@ -352,35 +356,13 @@ function insertParsedBlocks(editor: ReactEditor, blocks: ParsedBlock[]): boolean
   if (blocks.length === 0) return false;
 
   try {
-    const point = editor.selection?.anchor;
+    const first = blocks[0];
+    const mergeFirstBlockInline =
+      first.type === BlockType.Paragraph && first.children.length === 0 && first.text.length > 0;
 
-    if (!point) return false;
-
-    const entry = getBlockEntry(editor as YjsEditor, point);
-
-    if (!entry) return false;
-
-    const [node] = entry;
-    const blockId = (node as { blockId?: string }).blockId;
-
-    if (!blockId) return false;
-
-    const sharedRoot = getSharedRoot(editor as YjsEditor);
-    const block = getBlock(blockId, sharedRoot);
-    const parent = getBlock(block.get(YjsEditorKey.block_parent), sharedRoot);
-    const parentChildren = getChildrenArray(parent.get(YjsEditorKey.block_children), sharedRoot);
-    const index = parentChildren.toArray().findIndex((id) => id === blockId);
-    const doc = assertDocExists(sharedRoot);
-
-    // Convert parsed blocks to Slate elements with proper text wrapper
-    const slateNodes = blocks.map(parsedBlockToSlateElement);
-
-    // Insert into YJS document
-    doc.transact(() => {
-      slateContentInsertToYData(block.get(YjsEditorKey.block_parent), index + 1, slateNodes, doc);
+    return insertBlocksAtCaret(editor as YjsEditor, blocks.map(parsedBlockToSlateElement), {
+      mergeFirstBlockInline,
     });
-
-    return true;
   } catch (error) {
     console.error('Error inserting parsed blocks:', error);
     return false;

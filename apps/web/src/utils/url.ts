@@ -15,6 +15,59 @@ export function isValidUrl(input: string) {
   return isURL(input, { require_protocol: true, require_host: false });
 }
 
+export function isSingleURLText(input: string) {
+  const trimmed = input.trim();
+
+  if (!trimmed) return false;
+  if (trimmed.split(/\r\n|\r|\n/).filter(Boolean).length !== 1) return false;
+
+  return Boolean(processUrl(trimmed));
+}
+
+const UUID_PATTERN = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+const APPFLOWY_PAGE_PATH = new RegExp(`^/app/(${UUID_PATTERN})/(${UUID_PATTERN})/?$`, 'i');
+const APPFLOWY_WORKSPACE_PATH = new RegExp(`^/app/(${UUID_PATTERN})(?:/|$)`, 'i');
+
+export interface AppFlowyPageLink {
+  workspaceId: string;
+  viewId: string;
+  blockId?: string;
+}
+
+export function workspaceIdFromAppPathname(pathname: string): string | undefined {
+  return APPFLOWY_WORKSPACE_PATH.exec(pathname)?.[1];
+}
+
+export function parseAppFlowyPageLink(input: string, appHostname: string): AppFlowyPageLink | undefined {
+  const normalized = processUrl(input);
+
+  if (!normalized) return;
+
+  try {
+    const url = new URL(normalized);
+
+    if (url.hostname !== appHostname) return;
+
+    const match = APPFLOWY_PAGE_PATH.exec(url.pathname);
+
+    if (!match) return;
+
+    for (const key of url.searchParams.keys()) {
+      if (key !== 'blockId') return;
+    }
+
+    const blockId = url.searchParams.get('blockId')?.trim();
+
+    return {
+      workspaceId: match[1],
+      viewId: match[2],
+      ...(blockId ? { blockId } : {}),
+    };
+  } catch {
+    return;
+  }
+}
+
 // Process the URL to make sure it's a valid URL
 // If it's not a valid URL(eg: 'appflowy.io' or '192.168.1.2'), we'll add 'https://' to the URL
 export function processUrl(input: string) {
